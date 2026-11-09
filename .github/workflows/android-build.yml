@@ -222,8 +222,8 @@ jobs:
           cp "$APK" release-files/ShoppingList.apk
           unzip -tq release-files/ShoppingList.apk
           BADGING="$("$AAPT" dump badging release-files/ShoppingList.apk)"
-          printf '%s\\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${VERSION_CODE}' versionName='${VERSION_NAME}'"
-          printf '%s\\n' "$BADGING" | grep -F "sdkVersion:'30'"
+          printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${VERSION_CODE}' versionName='${VERSION_NAME}'"
+          printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
           if [[ ! -s "$APK.idsig" ]]; then
             echo "::error::A assinatura V4 não foi gerada. Verifique a configuração Android Gradle do módulo."
             exit 1
@@ -259,7 +259,7 @@ jobs:
           CHANGELOG: ${{ inputs.changelog }}
         run: |
           set -euo pipefail
-          printf '%s\\n' "$CHANGELOG" > release-files/CHANGELOG.md
+          printf '%s\n' "$CHANGELOG" > release-files/CHANGELOG.md
 
       - name: Publicar Release com APK e assinatura V4
         uses: softprops/action-gh-release@v2
