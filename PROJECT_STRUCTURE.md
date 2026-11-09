@@ -22,7 +22,6 @@ Shopping-List/
 ├── CONFIGURAR_APK_E_ATUALIZACOES.md
 ├── PROJECT_STRUCTURE.md
 ├── README.md
-├── Shopping_List_Project_com_Atualizador.zip
 └── update.json
 ```
 
@@ -38,18 +37,18 @@ Os principais arquivos Java são:
 - `UpdateConfig.java` e `UpdateManager.java`: consulta e instalação assistida de atualizações.
 - `ApkFileProvider.java`: entrega segura do APK ao instalador Android.
 
-O ZIP permanece como cópia do projeto original, mas foi recriado sem a pasta `signing/`, keystores ou arquivos de senha.
+A cópia ZIP antiga não faz parte da branch `main` atual. `android/` é a fonte principal do projeto.
 
 ## Fluxo de compilação
 
 1. Checkout da branch.
-2. Localização da raiz Android em `android/` (com fallback de extração do ZIP).
-3. Preparação de keystore privada por GitHub Actions Secrets.
+2. Localização da raiz Android em `android/`.
+3. Preparação da chave privada por GitHub Actions Secrets.
 4. Atualização de `versionCode` e `versionName`.
 5. Instalação de JDK, Android SDK e Gradle.
 6. Compilação do Release.
-7. Verificação V1/V2/V3, existência do arquivo V4 `.idsig` e cálculo SHA-256.
-8. Publicação de Release e artefatos.
+7. Verificação do package id, versionCode, SDK mínimo, ABI ARM64, integridade ZIP, assinaturas V1/V2/V3, arquivo `.idsig` V4 e SHA-256.
+8. Publicação do APK e da assinatura V4 em uma Release do GitHub.
 9. Atualização de `update.json`.
 
 ## Segurança da assinatura
@@ -58,4 +57,4 @@ A chave antiga do ZIP original foi exposta em commits anteriores do repositório
 
 ## Validação pendente
 
-A migração da estrutura e a limpeza do ZIP foram concluídas. O APK Release ainda precisa de uma execução real com Secrets de assinatura configurados. O workflow de verificação Debug valida o código sem exigir chave de distribuição.
+O workflow Debug compila e valida o APK de teste ARM64, incluindo integridade ZIP, package id, versionCode e assinatura V2. O APK Release de produção ainda depende dos Secrets de assinatura privada.
