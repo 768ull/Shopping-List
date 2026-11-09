@@ -1,10 +1,10 @@
-# Compilação do Shopping List e atualizações
+# Compilação do Shopping Lists e atualizações
 
 ## Estrutura do código
 
 O projeto Android está na pasta `android/`. Abra essa pasta no Android Studio. O módulo principal é `android/app`, com namespace `br.com.shoppinglist.app` e identificador instalado `br.com.shoppinglist`.
 
-O ZIP `Shopping_List_Project_com_Atualizador.zip` foi mantido como cópia do projeto original, mas a versão atual dele e a pasta `android/` não incluem keystores nem arquivos de senha.
+A cópia ZIP antiga não está na branch `main` atual. A pasta `android/` é a fonte principal. O antigo ZIP continha a chave privada Release, que foi exposta no histórico público; essa chave deve ser tratada como comprometida.
 
 ## Ambiente de compilação
 
@@ -22,9 +22,9 @@ O `android/app/build.gradle` já ativa as assinaturas V1, V2, V3 e V4. A V4 gera
 
 ### Atenção sobre a chave antiga
 
-O ZIP original continha `signing/shopping-list-release.jks` e `signing/signing.properties`. Como o repositório é público, esses arquivos foram expostos em commits anteriores. A cópia atual do ZIP foi limpa e o keystore foi removido da árvore `android/`, mas a remoção do arquivo atual não apaga automaticamente as versões antigas do histórico GitHub.
+O ZIP original continha `signing/shopping-list-release.jks` e `signing/signing.properties`. Como o repositório é público, esses arquivos foram expostos em commits anteriores. O keystore foi removido da árvore atual, mas isso não apaga as versões antigas do arquivo no histórico GitHub.
 
-**Não use a chave antiga como chave de distribuição segura.** Se já existir uma instalação do Shopping List assinada com ela, uma nova chave não será aceita como atualização normal. Nesse caso, é preciso preservar a identidade antiga ou planejar uma rotação compatível antes de distribuir o novo APK. O repositório possui uma pré-release de teste `debug-test`, mas ainda não possui uma Release oficial de produção. Isso não confirma se você instalou alguma compilação local.
+**Não use a chave antiga como chave de distribuição segura.** Se já existir uma instalação do Shopping List assinada com ela, uma nova chave não será aceita como atualização normal. Nesse caso, é preciso preservar a identidade antiga ou planejar uma rotação compatível antes de distribuir o novo APK. O repositório possui a pré-release de teste `debug-test` com o APK `1.0.6`; ainda não possui uma Release oficial de produção. Isso não confirma se você instalou alguma compilação local.
 
 ### Criar e guardar uma chave de distribuição
 
@@ -54,7 +54,7 @@ O workflow decodifica o keystore no diretório temporário `android/signing/`, c
 ## Gerar o primeiro APK
 
 1. Configure os quatro Secrets acima.
-2. Abra **Actions → Build Shopping List APK → Run workflow**.
+2. Abra **Actions → Build Shopping Lists APK → Run workflow**.
 3. Para a primeira publicação oficial, use `version_code=7` e `version_name=1.0.6`, que correspondem à versão-base atual do projeto; o manifesto inicial ainda não contém APK oficial publicado.
 4. O workflow compila, valida o APK, publica o Release e atualiza `update.json`.
 
@@ -75,7 +75,7 @@ As bibliotecas nativas de IA são empacotadas com compressão ZIP para reduzir o
 
 ## Compilação Debug e assinatura persistente
 
-O workflow `Verify Shopping List Android` gera somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele não deve ser tratado como APK de distribuição. A chave Debug é guardada no cache do GitHub Actions, com builds serializados e execução agendada para manter esse cache ativo. A assinatura Debug atual tem fingerprint SHA-256 `92cc0214682fe7b5c8310703f9dc22143264baf383a95acd8775867db77949a4`. Isso mantém futuras compilações Debug compatíveis enquanto o cache existir.
+O workflow `Verify Shopping Lists Android` gera somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele não deve ser tratado como APK de distribuição. A chave Debug é guardada no cache do GitHub Actions, com builds serializados e execução agendada para manter esse cache ativo. A assinatura Debug atual tem fingerprint SHA-256 `92cc0214682fe7b5c8310703f9dc22143264baf383a95acd8775867db77949a4`. Isso mantém futuras compilações Debug compatíveis enquanto o cache existir.
 
 **Atenção para a instalação Debug feita antes dessa correção:** a primeira compilação Debug (run 42650212939) foi assinada com uma chave aleatória gerada no runner temporário do GitHub, que não foi armazenada. Essa chave privada não está dentro do APK e não pode ser reconstruída a partir do certificado. Portanto, um APK assinado com a nova chave persistente não consegue atualizar aquela instalação. Não existe uma alteração de Gradle ou do APK que contorne a verificação de assinatura do Android.
 
