@@ -64,7 +64,7 @@ O manifesto raiz e a cópia `android/update.json` começam sem APK oficial publi
 
 ## Compilações Debug e atualizações
 
-O artefato do workflow `Verify Shopping Lists Android` é somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele agora usa uma chave Debug persistida no cache do GitHub Actions, renovado por um agendamento periódico. A versão-base está em `versionCode 9` / `versionName 1.0.8`.
+O artefato do workflow `Verify Shopping Lists Android` é somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele agora usa uma chave Debug persistida no cache do GitHub Actions, renovado por um agendamento periódico. A versão-base está em `versionCode 10` / `versionName 1.0.9`.
 
 Não distribua esse artefato como atualização Release. Para atualizações de usuários, use o workflow `Build Shopping Lists APK`, com identificador `br.com.shoppinglist` e a mesma chave privada Release protegida nos Actions Secrets.
 
