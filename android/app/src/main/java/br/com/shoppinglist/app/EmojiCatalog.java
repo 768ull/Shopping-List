@@ -23,7 +23,7 @@ import java.util.Locale;
 public final class EmojiCatalog {
     public static final String UNICODE_VERSION = "18.0";
     // Bump this when the curated catalog changes so old full catalogs are ignored.
-    public static final int CATALOG_SCHEMA = 2;
+    public static final int CATALOG_SCHEMA = 3;
     public static final int TOTAL_EMOJI_COUNT = 441;
     private static volatile List<EmojiEntry> cachedAll;
     private static volatile boolean loading;
