@@ -29,7 +29,7 @@ O `signingConfigs.release` ativa `enableV1Signing`, `enableV2Signing`, `enableV3
 
 **Não existe mais um keystore dentro desta pasta.** A chave de desenvolvimento que acompanhava o ZIP original foi retirada do código atual e da cópia atual do ZIP porque o repositório é público. Ela apareceu em commits anteriores do histórico público e deve ser considerada exposta.
 
-O workflow `Build Shopping Lists APK` recebe a chave privada de distribuição por GitHub Actions Secrets:
+O workflow `Build Shopping Lists APK` recebe a chave privada de distribuição por GitHub Actions Secrets. A chave antiga que estava no ZIP original foi exposta no histórico público; por segurança, não deve ser usada como chave nova de distribuição. Para publicar a Release oficial, configure uma chave nova nos Secrets (ou a chave privada que já está protegida e que corresponde à instalação instalada, se existir).
 - `SHOPPING_KEYSTORE_BASE64`
 - `SHOPPING_KEYSTORE_PASSWORD`
 - `SHOPPING_KEY_ALIAS`
@@ -59,12 +59,12 @@ O manifesto usado pelo aplicativo é:
 
 A verificação exige versão maior, link HTTPS, SHA-256 válido, pacote `br.com.shoppinglist` e o mesmo certificado de assinatura da instalação atual. Depois disso, o aplicativo abre o instalador oficial do Android para a confirmação da pessoa.
 
-O manifesto raiz começa sem APK publicado. Após a primeira publicação, o workflow atualiza `update.json` automaticamente.
+O manifesto raiz e a cópia `android/update.json` começam sem APK oficial publicado. Após a primeira publicação, o workflow atualiza os dois arquivos automaticamente.
 
 
 ## Compilações Debug e atualizações
 
-O artefato do workflow `Verify Shopping List Android` é somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele agora usa uma chave Debug persistida no cache do GitHub Actions, renovado por um agendamento periódico. A versão-base está em `versionCode 6` /`versionName 1.0.5`.
+O artefato do workflow `Verify Shopping List Android` é somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele agora usa uma chave Debug persistida no cache do GitHub Actions, renovado por um agendamento periódico. A versão-base está em `versionCode 7` / `versionName 1.0.6`.
 
 Não distribua esse artefato como atualização Release. Para atualizações de usuários, use o workflow `Build Shopping Lists APK`, com identificador `br.com.shoppinglist` e a mesma chave privada Release protegida nos Actions Secrets.
 
