@@ -32,131 +32,29 @@ jobs:
           set -euo pipefail
           ARCHIVE="Shopping_List_Project_com_Atualizador.zip"
           if [[ -f "$ARCHIVE" ]]; then
-            if unzip -Z1 "$ARCHIVE" | grep -Eiq '(^|/)(signing\.properties|[^/]+\.(jks|keystore|p12))        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
+            python3 - "$ARCHIVE" <<'PY'
+          import sys
+          import zipfile
+          from pathlib import PurePosixPath
 
-      - name: Prepare Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: ''
-
-      - name: Install Android SDK Platform 37
-        shell: bash
-        run: |
-          set -euo pipefail
-          sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
-
-      - name: Restore persistent Debug signing key
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: shopping-list-debug-keystore-v1
-
-      - name: Ensure persistent Debug signing key exists
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.android"
-          if [[ ! -s "$HOME/.android/debug.keystore" ]]; then
-            keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
-          fi
-          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
-          keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -E 'SHA1:|SHA256:'
-
-      - name: Configure Gradle 9.6.0
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.6.0"
-
-      - name: Compile Debug APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          gradle --no-daemon --stacktrace -p android :app:assembleDebug
-          APK="android/app/build/outputs/apk/debug/app-debug.apk"
-          test -s "$APK"
-          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
-          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
-          test -x "$AAPT"
-          test -x "$APKSIGNER"
-
-          EXPECTED_VERSION_CODE="$(grep -m1 -oE 'versionCode[[:space:]]+[0-9]+' android/app/build.gradle | grep -oE '[0-9]+')"
-          EXPECTED_VERSION_NAME="$(grep -m1 -oE "versionName[[:space:]]+'[^']+'" android/app/build.gradle | sed -E "s/versionName[[:space:]]+'//; s/'$//")"
-          test -n "$EXPECTED_VERSION_CODE"
-          test -n "$EXPECTED_VERSION_NAME"
-
-          mkdir -p verification-output
-          cp "$APK" verification-output/ShoppingList-debug.apk
-          unzip -tq verification-output/ShoppingList-debug.apk
-
-          python3 - <<'PY'
-          from zipfile import ZipFile, ZIP_STORED
-          apk = "verification-output/ShoppingList-debug.apk"
-          with ZipFile(apk) as archive:
-              broken = archive.testzip()
-              if broken:
-                  raise SystemExit(f"APK corrompido: {broken}")
-              native = [item for item in archive.infolist() if item.filename.startswith("lib/") and item.filename.endswith(".so")]
-              if not native:
-                  raise SystemExit("APK não contém bibliotecas nativas.")
-              stored = [item.filename for item in native if item.compress_type == ZIP_STORED]
-              if stored:
-                  raise SystemExit("Bibliotecas nativas continuam sem compressão: " + ", ".join(stored[:5]))
+          archive_path = sys.argv[1]
+          forbidden = []
+          with zipfile.ZipFile(archive_path) as archive:
+              bad = archive.testzip()
+              if bad:
+                  raise SystemExit(f"ZIP do projeto corrompido: {bad}")
+              for name in archive.namelist():
+                  path = PurePosixPath(name)
+                  lower = name.lower()
+                  if path.name.lower() == "signing.properties" or lower.endswith((".jks", ".keystore", ".p12", ".pfx")):
+                      forbidden.append(name)
+          if forbidden:
+              print("::error::O ZIP contém material de assinatura privada:")
+              for name in forbidden:
+                  print(f" - {name}")
+              raise SystemExit(1)
+          print("ZIP íntegro e sem keystore ou signing.properties.")
           PY
-
-          BADGING="$("$AAPT" dump badging verification-output/ShoppingList-debug.apk)"
-          printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist.debug' versionCode='${EXPECTED_VERSION_CODE}' versionName='${EXPECTED_VERSION_NAME}-debug'"
-          printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
-          printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
-
-          "$APKSIGNER" verify --verbose --print-certs verification-output/ShoppingList-debug.apk 2>&1 | tee verification-output/signature-report.txt
-          grep -Eiq "Verified using v2 scheme.*: true" verification-output/signature-report.txt
-          sha256sum verification-output/ShoppingList-debug.apk > verification-output/sha256.txt
-
-      - name: Upload verified Debug test APK (not for release updates)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ShoppingList-DEBUG-TEST-ONLY
-          path: verification-output/*
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Publish Debug APK as direct download (test only)
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: debug-test
-          target_commitish: main
-          name: APK de teste do Shopping Lists (Debug)
-          prerelease: true
-          make_latest: false
-          body: |
-            Download direto do APK de teste (Debug) do Shopping Lists.
-
-            Baixe o arquivo ShoppingList-debug.apk abaixo e toque nele para instalar.
-
-            Nao baixe o ZIP de artefatos das Actions no celular: esse ZIP pode chegar
-            corrompido e o Android exibe "Ocorreu um problema ao analisar o pacote"
-            na instalacao do APK extraido.
-
-            Requisitos: Android 11 ou mais recente e processador 64 bits (arm64-v8a).
-
-            Confira a integridade comparando o hash do APK baixado com sha256.txt.
-            Se o Android recusar a instalacao por assinatura diferente, desinstale a
-            versao antiga do aplicativo de teste antes de instalar este APK.
-          files: |
-            verification-output/ShoppingList-debug.apk
-            verification-output/sha256.txt
-            verification-output/signature-report.txt
-          overwrite_files: true
-          fail_on_unmatched_files: true
-; then
-              echo "::error::O ZIP do projeto contém material de assinatura privada. Remova o JKS e signing.properties do arquivo antes de distribuí-lo."
-              exit 1
-            fi
-            echo "Nenhum JKS, keystore, P12 ou signing.properties encontrado no ZIP do projeto."
           fi
 
       - name: Install JDK 17
@@ -235,7 +133,7 @@ jobs:
           PY
 
           BADGING="$("$AAPT" dump badging verification-output/ShoppingList-debug.apk)"
-          printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist.debug' versionCode='${EXPECTED_VERSION_CODE}' versionName='${EXPECTED_VERSION_NAME}-debug'"
+          printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist.debug' versionCode='\${EXPECTED_VERSION_CODE}' versionName='\${EXPECTED_VERSION_NAME}-debug'"
           printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
           printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
 
@@ -262,18 +160,11 @@ jobs:
           make_latest: false
           body: |
             Download direto do APK de teste (Debug) do Shopping Lists.
-
-            Baixe o arquivo ShoppingList-debug.apk abaixo e toque nele para instalar.
-
-            Nao baixe o ZIP de artefatos das Actions no celular: esse ZIP pode chegar
-            corrompido e o Android exibe "Ocorreu um problema ao analisar o pacote"
-            na instalacao do APK extraido.
+            Baixe o arquivo ShoppingList-debug.apk diretamente em Assets.
 
             Requisitos: Android 11 ou mais recente e processador 64 bits (arm64-v8a).
-
-            Confira a integridade comparando o hash do APK baixado com sha256.txt.
-            Se o Android recusar a instalacao por assinatura diferente, desinstale a
-            versao antiga do aplicativo de teste antes de instalar este APK.
+            Confira a integridade comparando sha256.txt.
+            Este APK usa o pacote br.com.shoppinglist.debug e não atualiza uma instalação Release br.com.shoppinglist.
           files: |
             verification-output/ShoppingList-debug.apk
             verification-output/sha256.txt
