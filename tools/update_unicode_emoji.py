@@ -103,7 +103,9 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
     # previously mistaken for the product itself.
     excluded = ("shopping bags", "shopping cart", "clinking", "pouring liquid", "with slash",
                 "muted speaker", "speaker low volume", "speaker medium volume",
-                "speaker high volume", "with arrow", "cooking", "dashing away")
+                "speaker high volume", "with arrow", "cooking", "dashing away",
+                "low battery", "wilted flower", "broken chain", "drop of blood", "x-ray",
+                "chart increasing", "chart decreasing", "bar chart")
     if any(term in normalized for term in excluded):
         return False
 
@@ -164,7 +166,7 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
         if subgroup == "event":
             return any(term in normalized for term in
                        ("jack-o-lantern", "christmas tree", "fireworks", "sparkler",
-                        "balloon", "ribbon", "wrapped gift", "red envelope",
+                        "balloon", "party popper", "confetti ball", "firecracker", "ribbon", "wrapped gift", "red envelope",
                         "wind chime", "japanese dolls", "carp streamer", "pine decoration"))
         if subgroup == "arts & crafts":
             return any(term in normalized for term in
@@ -267,7 +269,7 @@ def main() -> None:
     manifest = {
         "unicodeVersion": version,
         "emojiCount": len(rows),
-        "catalogSchema": 2,
+        "catalogSchema": 3,
         "catalogType": "shopping-products",
         "sha256": digest,
         "source": UNICODE_SOURCE,
