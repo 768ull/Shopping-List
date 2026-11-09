@@ -52,6 +52,17 @@ android {
     }
 
     packaging {
+        jniLibs {
+            // The app uses StableDiffusion and ONNX only. Keep unrelated LLM,
+            // speech, and OCR native engines out of this APK.
+            excludes += [
+                '**/libsmollm*.so',
+                '**/libwhisper_jni.so',
+                '**/libbark_jni.so',
+                '**/libmlkit_google_ocr_pipeline.so',
+                '**/libmlkitcommonpipeline.so'
+            ]
+        }
         resources {
             excludes += ['/META-INF/DEPENDENCIES', '/META-INF/LICENSE*', '/META-INF/NOTICE*']
         }
