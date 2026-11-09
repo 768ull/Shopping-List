@@ -25,11 +25,10 @@ Shopping-List/
 ├── CONFIGURAR_APK_E_ATUALIZACOES.md
 ├── PROJECT_STRUCTURE.md
 ├── README.md
-├── Shopping_List_Project_com_Atualizador.zip
 └── update.json
 ```
 
-O ZIP continua disponível como cópia do projeto original, mas foi recriado sem a pasta `signing/`, arquivos JKS ou senhas. A fonte principal para manutenção é a pasta `android/`.
+A cópia ZIP antiga não está na branch `main` atual. A fonte principal e mantida do projeto é a pasta `android/`; o ZIP de **Code → Download ZIP** contém apenas código-fonte e não deve ser instalado.
 
 ## Recursos do aplicativo
 
@@ -54,7 +53,7 @@ O workflow `Build Shopping Lists APK` usa a pasta `android/`, configura a assina
 
 O aplicativo mantém o identificador `br.com.shoppinglist`. Para que uma atualização seja instalada por cima da versão existente, ela precisa ter um `versionCode` maior e a mesma identidade de assinatura.
 
-O keystore que estava no ZIP original foi removido da versão atual do código e do ZIP público porque o repositório é público. A chave antiga apareceu em commits anteriores do histórico público e deve ser considerada exposta. Não a use como chave de distribuição segura.
+O keystore antigo foi removido da árvore atual, mas a chave privada foi incluída no ZIP em commits antigos e continua potencialmente acessível pelo histórico público. Portanto, ela deve ser considerada comprometida e não deve ser usada para uma nova distribuição.
 
 Configure os quatro Secrets no GitHub em **Settings → Secrets and variables → Actions**:
 
@@ -70,7 +69,7 @@ O manifesto público é:
 
 ## Estado de validação
 
-A migração dos arquivos para `android/` e a limpeza do ZIP foram concluídas pelo GitHub Actions. A compilação Release ainda depende dos Secrets de assinatura válidos e deve ser confirmada por uma execução do workflow de build.
+A compilação Debug `1.0.6` foi concluída com sucesso no GitHub Actions. O APK passou nas verificações de pacote, versão, arquitetura ARM64, integridade ZIP e assinatura V2. A Release oficial (`br.com.shoppinglist`) ainda depende de uma chave privada de distribuição configurada nos quatro Secrets e não foi publicada.
 
 
 ## Assinatura das compilações e atualização
@@ -81,7 +80,7 @@ A versão-base do projeto agora é `versionCode 7` / `1.0.6`. A distribuição a
 
 **Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública, portanto não é possível reconstruir a chave privada nem assinar um APK de atualização compatível com aquela instalação. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
 
-O APK de teste Debug agora também é publicado como download direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test). Baixe o arquivo `ShoppingList-debug.apk` direto dessa página e toque nele para instalar. O ZIP de artefatos das Actions (`ShoppingList-DEBUG-TEST-ONLY.zip`) continua disponível para inspeção, mas downloads grandes de artefatos costumam chegar corrompidos no celular; um APK extraído de um ZIP corrompido faz o Android exibir "Ocorreu um problema ao analisar o pacote" na instalação.
+O APK Debug `1.0.6` está publicado como arquivo direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test). Baixe `ShoppingList-debug.apk` diretamente em **Assets**. O ZIP de artefatos das Actions serve apenas para inspeção; não extraia e instale a partir dele no celular.
 
 ## Baixar o aplicativo pelo GitHub Mobile
 
