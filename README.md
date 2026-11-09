@@ -28,7 +28,7 @@ Shopping-List/
 └── update.json
 ```
 
-A cópia ZIP antiga não está na branch `main` atual. A fonte principal e mantida do projeto é a pasta `android/`; o ZIP de **Code → Download ZIP** contém apenas código-fonte e não deve ser instalado.
+O arquivo `Shopping_List_Project_com_Atualizador.zip` é uma cópia auxiliar do projeto; a fonte principal mantida é a pasta `android/`. O ZIP do código-fonte e o ZIP do projeto não são APKs instaláveis.
 
 ## Recursos do aplicativo
 
