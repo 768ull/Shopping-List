@@ -6,15 +6,15 @@ on:
       version_code:
         description: "Número de versão inteiro e maior que o publicado"
         required: true
-        default: "12"
+        default: "13"
       version_name:
         description: "Nome da versão (ex.: 1.0)"
         required: true
-        default: "1.0.11"
+        default: "1.0.12"
       changelog:
         description: "Notas da versão"
         required: true
-        default: "Catálogo filtrado com 436 emojis de produtos, reconhecimento local aprimorado e assinatura Debug V2 restaurada com certificado preservado."
+        default: "Primeira versão oficial otimizada: R8, redução de recursos e backup/restauração das listas entre instalações."
 
 concurrency:
   group: shopping-list-release
