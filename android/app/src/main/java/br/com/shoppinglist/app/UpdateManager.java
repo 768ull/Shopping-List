@@ -105,7 +105,7 @@ final class UpdateManager {
                 String notes = json.optString("changelog", "");
                 String digest = json.optString("sha256", "").replace(" ", "").toLowerCase(Locale.ROOT);
                 if (remoteCode <= installedVersionCode(activity)) {
-                    message = "Você já está usando a versão mais recente do Shopping Lista.";
+                    message = "Você já está usando a versão mais recente do Shopping Lists.";
                 } else {
                     if (apkUrl.trim().isEmpty()) throw new IllegalStateException("O manifesto não informa o link do APK.");
                     URL downloadUrl = new URL(apkUrl);
@@ -219,7 +219,7 @@ final class UpdateManager {
         PackageInfo installed = pm.getPackageInfo(activity.getPackageName(), flags);
         PackageInfo candidate = pm.getPackageArchiveInfo(apk.getAbsolutePath(), flags);
         if (candidate == null || !activity.getPackageName().equals(candidate.packageName)) {
-            throw new IllegalStateException("O arquivo baixado não é o Shopping Lista.");
+            throw new IllegalStateException("O arquivo baixado não é o Shopping Lists.");
         }
         long candidateCode = Build.VERSION.SDK_INT >= 28
                 ? candidate.getLongVersionCode() : candidate.versionCode;
