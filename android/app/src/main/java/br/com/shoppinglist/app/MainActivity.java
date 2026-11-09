@@ -504,6 +504,17 @@ public class MainActivity extends android.app.Activity {
             @Override public void afterTextChanged(Editable s) { }
         });
 
+        // Reclassifica itens já salvos e retoma a IA semântica ao abrir uma lista.
+        if (autoEmoji && !item.emojiManual && item.text != null && item.text.trim().length() >= 3) {
+            String refreshed = EmojiCatalog.automatic(item.text);
+            if (!refreshed.equals(item.emoji)) {
+                item.emoji = refreshed;
+                database.setItemEmoji(item.id, refreshed, false);
+                renderSticker(sticker, refreshed);
+            }
+            scheduleProductAi(item, input, sticker, item.text, refreshed);
+        }
+
         TextView remove = label("×", 23, Color.rgb(178, 104, 77), true);
         remove.setGravity(Gravity.CENTER);
         row.addView(remove, new LinearLayout.LayoutParams(dp(30), dp(43)));
