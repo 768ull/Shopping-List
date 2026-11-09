@@ -184,10 +184,10 @@ public final class ShoppingListRenderer {
                     canvas.drawRoundRect(100, y - 17, 128, y + 8, 5, 5, stickerBackground);
                     Paint stickerText = new Paint(Paint.ANTI_ALIAS_FLAG);
                     stickerText.setColor(customSticker.foreground);
-                    stickerText.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
-                    stickerText.setTextSize(9f);
-                    float labelWidth = stickerText.measureText(customSticker.badge);
-                    canvas.drawText(customSticker.badge, 114 - labelWidth / 2f, y, stickerText);
+                    stickerText.setTypeface(Typeface.DEFAULT);
+                    stickerText.setTextSize(18f);
+                    stickerText.setTextAlign(Paint.Align.CENTER);
+                    canvas.drawText(customSticker.badge, 114, y + 5f, stickerText);
                 } else {
                     canvas.drawText(stickerValue, 101, y + 2, emoji);
                 }
