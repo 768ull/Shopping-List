@@ -6,15 +6,15 @@ on:
       version_code:
         description: "Número de versão inteiro e maior que o publicado"
         required: true
-        default: "2"
+        default: "3"
       version_name:
         description: "Nome da versão (ex.: 1.0)"
         required: true
-        default: "1.0.1"
+        default: "1.0.2"
       changelog:
         description: "Notas da versão"
         required: true
-        default: "Correção dos ícones adaptativos e estabilidade de atualização."
+        default: "Catálogo completo Unicode Emoji 18.0, busca de emojis em português, reconhecimento local de produtos e adesivos por categoria."
 
 concurrency:
   group: shopping-list-release
