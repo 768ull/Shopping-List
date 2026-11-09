@@ -54,7 +54,7 @@ object ProductAiEngine {
     private const val IMAGE_MODEL_ID = "concedo/sdxs-512-tinySDdistilled-GGUF"
     private const val IMAGE_MODEL_REVISION = "3144d898d61492f8382ffcabec055733fc5b2a0e"
     private const val IMAGE_MODEL_FILE = "sdxs-512-tinySDdistilled_Q8_0.gguf"
-    private const val VECTOR_CACHE_VERSION = 4
+    private const val VECTOR_CACHE_VERSION = 5
     private const val VECTOR_DIMENSION = 768
     private const val MIN_SIMILARITY = 0.78f
     private const val GIB = 1024L * 1024L * 1024L
@@ -127,17 +127,20 @@ object ProductAiEngine {
         Candidate("pipoca", "🍿"),
         Candidate("suco, suco de fruta, suco natural, suco integral, suco de caixinha", "🧃"),
         Candidate("néctar de fruta, refresco, polpa de fruta, bebida de fruta", "🧃"),
+        Candidate("suco em pó e sucos prontos: Tang, Fresh, Mid, Del Valle, Maguary, Dafruta e Kapo", "🧃"),
         Candidate("refrigerante, bebida gaseificada, bebida gelada, copo com canudo", "🥤"),
         Candidate("refrigerante de cola, Coca Cola, Coca-Cola, Pepsi, Guaraná, Guaraná Antarctica", "🥤"),
         Candidate("Fanta, Sprite, 7 Up, Schweppes, água tônica, soda", "🥤"),
         Candidate("água mineral, água potável, água com gás, água sem gás, garrafa de água", "💧"),
+        Candidate("água mineral de marcas Bonafont, Minalba, Crystal, Indaiá, São Lourenço, Perrier e Evian", "💧"),
+        Candidate("água de coco e bebidas de coco, Kero Coco e Sococo", "🥥"),
         Candidate("água de coco, bebida de coco", "🥥"),
-        Candidate("bebida energética, energético, Red Bull, Monster, Gatorade, Powerade, isotônico", "🥤"),
+        Candidate("bebida energética, energético, Red Bull, Monster, Baly, TNT, Fusion, Gatorade, Powerade, isotônico", "🥤"),
         Candidate("café, café em pó, café solúvel, cappuccino, espresso, xícara de café", "☕"),
         Candidate("chá, chá de ervas, chá mate, infusão, xícara de chá", "🍵"),
         Candidate("chá gelado, ice tea, chá pronto para beber", "🧋"),
         Candidate("leite, leite integral, leite desnatado, copo de leite", "🥛"),
-        Candidate("achocolatado, Nescau, Toddy, Yakult, leite fermentado, bebida láctea, iogurte líquido", "🥛"),
+        Candidate("achocolatado, Nescau, Toddy, Yakult, leite fermentado, bebida láctea, iogurte líquido, Ninho, Itambé, Piracanjuba, Parmalat, Italac, Activia, Danone", "🥛"),
         Candidate("cerveja, cerveja pilsen, lager, IPA, chope, chopp", "🍺"),
         Candidate("vinho tinto, vinho branco, vinho rosé, espumante, champanhe", "🍷"),
         Candidate("bebida destilada, whisky, uísque, vodka, cachaça, rum, gin, tequila", "🥃"),
@@ -196,7 +199,8 @@ object ProductAiEngine {
         Candidate("bicicleta", "🚲"),
         Candidate("pneu", "🛞"),
         Candidate("bola de futebol", "⚽"),
-        Candidate("ursinho de pelúcia, brinquedo de pelúcia", "🧸")
+        Candidate("ursinho de pelúcia, brinquedo de pelúcia", "🧸"),
+        Candidate("salgadinho de pacote, batata chips, Doritos, Cheetos, Ruffles e Pringles", "🍟")
     )
 
     @JvmStatic
