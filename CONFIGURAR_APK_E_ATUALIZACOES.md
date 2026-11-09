@@ -36,6 +36,17 @@ keytool -genkeypair -v -keystore shopping-list-release.jks -alias shoppinglist -
 
 Guarde o arquivo e as senhas em local privado e faça uma cópia de segurança offline. Não envie o JKS ao repositório.
 
+Crie `signing/signing.properties` dentro da pasta `android/` com este formato:
+
+```properties
+storeFile=shopping-list-release.jks
+storePassword=SENHA_DO_KEYSTORE
+keyAlias=shoppinglist
+keyPassword=SENHA_DA_CHAVE
+```
+
+Mantenha `signing/` no `.gitignore`. Os valores de senha acima são marcadores: substitua-os pelas senhas que você definiu no `keytool`.
+
 Converta o keystore para Base64. Em Linux/macOS:
 
 ```bash
