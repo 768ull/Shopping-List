@@ -133,7 +133,7 @@ public final class StickerCatalog {
             return "sticker:PRESENTE";
         if (hasAny(s, "arroz", "feijao", "macarrao", "farinha", "acucar", "sal", "fruta",
                 "verdura", "legume", "carne", "leite", "queijo", "pao", "biscoito", "cafe",
-                "suco", "refrigerante", "tempero"))
+                "suco", "refrigerante", "tempero", "manteiga", "margarina", "acucar", "farinha", "oleo", "vinagre", "cereal", "aveia", "granola", "fuba", "farofa", "molho", "geleia", "gelatina", "fermento", "achocolatado", "condimento", "maionese", "ketchup", "mostarda", "azeitona", "palmito", "atum", "salame", "mortadela", "salmao", "pasta de amendoim", "leite de coco", "mandioca", "inhame"))
             return "sticker:ALIMENTO";
         if (hasAny(s, "papel higienico", "papel toalha", "guardanapo", "lixeira", "escova de limpeza",
                 "esponja", "sabao", "limpeza"))
