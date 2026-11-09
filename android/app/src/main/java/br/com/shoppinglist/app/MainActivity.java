@@ -570,16 +570,12 @@ public class MainActivity extends android.app.Activity {
                 : "Sua lista ocupa " + pendingExport.pages.size() + " páginas. Recomendamos salvar como PDF.";
         new AlertDialog.Builder(this)
                 .setTitle("Salvar sua lista")
-                .setMessage("A lista já é salva automaticamente no aparelho. " + recommendation + " Você também pode baixar cada página como uma imagem separada.")
-                .setItems(choices, (dialog, which) -> {
-                    if (which == 0) {
-                        Toast.makeText(this, "Lista salva no aplicativo.", Toast.LENGTH_SHORT).show();
-                    } else if (which == 1) {
-                        choosePdfLocation();
-                    } else {
-                        chooseImageFolder();
-                    }
-                }).show();
+                .setMessage("A lista já é salva automaticamente no aparelho. " + recommendation
+                        + " Escolha como deseja baixar:")
+                .setPositiveButton("Baixar como PDF", (dialog, which) -> choosePdfLocation())
+                .setNegativeButton("Baixar como imagem", (dialog, which) -> chooseImageFolder())
+                .setNeutralButton("Fechar", null)
+                .show();
     }
 
     private PendingExport prepareCurrentExport() {
