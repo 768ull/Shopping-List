@@ -81,6 +81,7 @@ public class MainActivity extends android.app.Activity {
         database = new AppDatabase(this);
         SharedPreferences prefs = getSharedPreferences("shopping_list_preferences", MODE_PRIVATE);
         autoEmoji = prefs.getBoolean("automatic_emojis", true);
+        EmojiCatalogUpdater.check(getApplicationContext());
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         root = new FrameLayout(this);
         setContentView(root);
@@ -500,7 +501,7 @@ public class MainActivity extends android.app.Activity {
         StickerCatalog.Sticker custom = StickerCatalog.fromValue(value);
         if (custom != null) {
             view.setText(custom.badge);
-            view.setTextSize(11);
+            view.setTextSize(22);
             view.setTextColor(custom.foreground);
             view.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
             view.setBackground(roundDrawable(custom.background, dp(12), Color.rgb(232, 215, 183), dp(1)));
@@ -527,10 +528,10 @@ public class MainActivity extends android.app.Activity {
         heading.setPadding(0, 0, 0, dp(4));
         outer.addView(heading);
 
-        int emojiCount = EmojiCatalog.TOTAL_EMOJI_COUNT;
+        int emojiCount = EmojiCatalogUpdater.getEmojiCount(this);
         TextView catalogInfo = label(
-                emojiCount + " emojis Unicode " + EmojiCatalog.UNICODE_VERSION
-                        + " • pesquisa em português • offline",
+                emojiCount + " emojis Unicode " + EmojiCatalogUpdater.getUnicodeVersion(this)
+                        + " • catálogo local com atualização automática",
                 10, MUTED, false);
         catalogInfo.setPadding(0, 0, 0, dp(10));
         outer.addView(catalogInfo);
@@ -594,18 +595,15 @@ public class MainActivity extends android.app.Activity {
                     tile.setOrientation(LinearLayout.VERTICAL);
                     tile.setGravity(Gravity.CENTER);
                     tile.setPadding(dp(2), dp(4), dp(2), dp(4));
-                    TextView badge = label(custom.badge, 13, custom.foreground, true);
+                    TextView badge = label(custom.badge, 24, custom.foreground, true);
                     badge.setGravity(Gravity.CENTER);
+                    badge.setContentDescription(custom.title);
                     badge.setBackground(roundDrawable(custom.background, dp(11),
                             Color.rgb(232, 215, 183), dp(1)));
-                    tile.addView(badge, new LinearLayout.LayoutParams(dp(43), dp(39)));
-                    TextView name = label(custom.title, 9, MUTED, false);
-                    name.setGravity(Gravity.CENTER);
-                    name.setMaxLines(2);
-                    tile.addView(name, new LinearLayout.LayoutParams(dp(62), dp(30)));
+                    tile.addView(badge, new LinearLayout.LayoutParams(dp(43), dp(43)));
                     GridLayout.LayoutParams params = new GridLayout.LayoutParams();
                     params.width = dp(67);
-                    params.height = dp(76);
+                    params.height = dp(53);
                     grid.addView(tile, params);
                     tile.setOnClickListener(v -> {
                         item.emoji = custom.value();
