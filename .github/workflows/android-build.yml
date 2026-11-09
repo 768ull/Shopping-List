@@ -4,17 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       version_code:
-        description: "Número de versão (deve aumentar a cada atualização)"
+        description: "Número de versão inteiro e maior que o publicado"
         required: true
         default: "1"
       version_name:
-        description: "Nome da versão"
+        description: "Nome da versão (ex.: 1.0)"
         required: true
         default: "1.0"
       changelog:
         description: "Notas da versão"
         required: true
         default: "Primeira versão do Shopping List."
+
+concurrency:
+  group: shopping-list-release
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -25,17 +29,59 @@ jobs:
     steps:
       - name: Baixar repositório
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Extrair projeto Android
+      - name: Validar e extrair projeto Android
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p _project
-          unzip -q Shopping_List_Project_com_Atualizador.zip -d _project
-          test -f _project/ShoppingListProject/app/build.gradle
-          echo "PROJECT_DIR=$GITHUB_WORKSPACE/_project/ShoppingListProject" >> "$GITHUB_ENV"
+          ARCHIVE="$GITHUB_WORKSPACE/Shopping_List_Project_com_Atualizador.zip"
+          EXTRACT_DIR="$GITHUB_WORKSPACE/_project"
+          test -s "$ARCHIVE"
+          unzip -tq "$ARCHIVE"
+          rm -rf "$EXTRACT_DIR"
+          mkdir -p "$EXTRACT_DIR"
+          unzip -q "$ARCHIVE" -d "$EXTRACT_DIR"
 
-      - name: Preparar assinatura privada
+          mapfile -t APP_BUILDS < <(find "$EXTRACT_DIR" -type f -path '*/app/build.gradle' -not -path '*/build/*' | sort)
+          if [[ "${#APP_BUILDS[@]}" -ne 1 ]]; then
+            echo "::error::Esperava encontrar exatamente um app/build.gradle; encontrei ${#APP_BUILDS[@]}."
+            find "$EXTRACT_DIR" -maxdepth 5 -type f \( -name 'settings.gradle' -o -name 'settings.gradle.kts' -o -path '*/app/build.gradle' \) -print
+            exit 1
+          fi
+
+          APP_BUILD_FILE="${APP_BUILDS[0]}"
+          APP_DIR="$(dirname "$APP_BUILD_FILE")"
+          PROJECT_DIR=""
+          candidate="$(dirname "$APP_DIR")"
+          while [[ "$candidate" == "$EXTRACT_DIR"* ]]; do
+            if [[ -f "$candidate/settings.gradle" || -f "$candidate/settings.gradle.kts" ]]; then
+              PROJECT_DIR="$candidate"
+              break
+            fi
+            [[ "$candidate" == "$EXTRACT_DIR" ]] && break
+            candidate="$(dirname "$candidate")"
+          done
+
+          if [[ -z "$PROJECT_DIR" ]]; then
+            echo "::error::Não encontrei settings.gradle ou settings.gradle.kts acima do módulo app."
+            exit 1
+          fi
+
+          RELATIVE_MODULE="${APP_DIR#"$PROJECT_DIR"/}"
+          APP_MODULE_PATH=":${RELATIVE_MODULE//\//:}"
+          {
+            echo "PROJECT_DIR=$PROJECT_DIR"
+            echo "APP_DIR=$APP_DIR"
+            echo "APP_BUILD_FILE=$APP_BUILD_FILE"
+            echo "APP_MODULE_PATH=$APP_MODULE_PATH"
+          } >> "$GITHUB_ENV"
+
+          echo "Projeto Android localizado em: ${PROJECT_DIR#"$GITHUB_WORKSPACE/"}"
+          echo "Módulo de aplicativo: $APP_MODULE_PATH"
+
+      - name: Preparar e validar assinatura privada
         shell: bash
         env:
           KEYSTORE_BASE64: ${{ secrets.SHOPPING_KEYSTORE_BASE64 }}
@@ -45,16 +91,22 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "$KEYSTORE_BASE64" || -z "$KEYSTORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
-            echo "::error::Faltam Secrets de assinatura. Consulte CONFIGURAR_APK_E_ATUALIZACOES.md."
+            echo "::error::Faltam Secrets de assinatura. A chave do ZIP é de desenvolvimento e está exposta no repositório público. Consulte CONFIGURAR_APK_E_ATUALIZACOES.md."
             exit 1
           fi
-          mkdir -p "$PROJECT_DIR/signing"
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$PROJECT_DIR/signing/shopping-list-release.jks"
-          test -s "$PROJECT_DIR/signing/shopping-list-release.jks"
-          printf 'storeFile=shopping-list-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > "$PROJECT_DIR/signing/signing.properties"
-          chmod 600 "$PROJECT_DIR/signing/"*
 
-      - name: Definir versão
+          SIGNING_DIR="$PROJECT_DIR/signing"
+          mkdir -p "$SIGNING_DIR"
+          CI_KEYSTORE_PATH="$SIGNING_DIR/shopping-list-release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$CI_KEYSTORE_PATH"
+          test -s "$CI_KEYSTORE_PATH"
+          keytool -list -keystore "$CI_KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+
+          printf 'storeFile=shopping-list-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > "$SIGNING_DIR/signing.properties"
+          chmod 600 "$CI_KEYSTORE_PATH" "$SIGNING_DIR/signing.properties"
+          echo "CI_KEYSTORE_PATH=$CI_KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Definir versão e habilitar assinaturas V1 a V4
         env:
           VERSION_CODE: ${{ inputs.version_code }}
           VERSION_NAME: ${{ inputs.version_name }}
@@ -62,31 +114,73 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os, pathlib, re
-          path = pathlib.Path(os.environ["PROJECT_DIR"]) / "app/build.gradle"
-          source = path.read_text()
-          code = int(os.environ["VERSION_CODE"])
-          name = os.environ["VERSION_NAME"]
-          if code < 1 or not re.fullmatch(r"[0-9A-Za-z._+-]{1,40}", name):
-              raise SystemExit("Número ou nome de versão inválido.")
+          import json
+          import os
+          import pathlib
+          import re
 
-          # Permite a primeira publicação quando o manifesto ainda não possui APK.
-          manifest_path = pathlib.Path.cwd() / "update.json"
-          if manifest_path.is_file():
-              import json
-              manifest = json.loads(manifest_path.read_text())
-              current_code = int(manifest.get("versionCode", 0))
-              has_published_apk = bool(str(manifest.get("apkUrl", "")).strip())
-              if has_published_apk and code <= current_code:
-                  raise SystemExit(
-                      f"version_code precisa ser maior que a versão publicada ({current_code})."
-                  )
+          code_text = os.environ["VERSION_CODE"].strip()
+          name = os.environ["VERSION_NAME"].strip()
+          if not re.fullmatch(r"[1-9][0-9]*", code_text):
+              raise SystemExit("version_code precisa ser um inteiro positivo.")
+          if not re.fullmatch(r"[0-9A-Za-z._+-]{1,40}", name):
+              raise SystemExit("version_name inválido. Use somente letras, números, ponto, _, + e -.")
 
-          source, count_code = re.subn(r"versionCode\s+\d+", f"versionCode {code}", source, count=1)
-          source, count_name = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '" + name + "'", source, count=1)
-          if count_code != 1 or count_name != 1:
-              raise SystemExit("Não foi possível atualizar versionCode/versionName.")
-          path.write_text(source)
+          code = int(code_text)
+          manifest_path = pathlib.Path(os.environ["GITHUB_WORKSPACE"]) / "update.json"
+          if not manifest_path.is_file():
+              raise SystemExit("update.json não foi encontrado.")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          current_code = int(manifest.get("versionCode", 0))
+          has_published_apk = bool(str(manifest.get("apkUrl", "")).strip())
+          if has_published_apk and code <= current_code:
+              raise SystemExit(f"version_code precisa ser maior que a versão publicada ({current_code}).")
+
+          build_file = pathlib.Path(os.environ["APP_BUILD_FILE"])
+          source = build_file.read_text(encoding="utf-8")
+
+          source, code_count = re.subn(
+              r"(\bversionCode\s*(?:=\s*)?)\d+",
+              lambda m: m.group(1) + str(code),
+              source,
+              count=1,
+          )
+          source, name_count = re.subn(
+              r"""(\bversionName\s*(?:=\s*)?)(['"])[^'"]*\2""",
+              lambda m: m.group(1) + m.group(2) + name + m.group(2),
+              source,
+              count=1,
+          )
+          if code_count != 1 or name_count != 1:
+              raise SystemExit("Não encontrei exatamente uma definição de versionCode e versionName em app/build.gradle.")
+
+          # Configuração injetada somente no diretório temporário da compilação.
+          # As quatro versões usam a mesma chave privada de distribuição.
+          source += r'''
+
+          // Configuração de assinatura do GitHub Actions; não adicionar credenciais ao Git.
+          android {
+              signingConfigs {
+                  ciRelease {
+                      storeFile file(System.getenv("CI_KEYSTORE_PATH"))
+                      storePassword System.getenv("CI_KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("CI_KEY_ALIAS")
+                      keyPassword System.getenv("CI_KEY_PASSWORD")
+                      enableV1Signing true
+                      enableV2Signing true
+                      enableV3Signing true
+                      enableV4Signing true
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.ciRelease
+                  }
+              }
+          }
+          '''
+          build_file.write_text(source, encoding="utf-8")
+          print(f"Versão configurada: {name} ({code}); assinaturas V1/V2/V3/V4 habilitadas.")
           PY
 
       - name: Instalar JDK 17
@@ -98,44 +192,89 @@ jobs:
       - name: Preparar Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Instalar plataforma Android API 37
+      - name: Instalar plataforma Android e ferramentas
         shell: bash
         run: |
+          set -euo pipefail
           yes | sdkmanager --licenses >/dev/null
           sdkmanager "platforms;android-37" "build-tools;36.0.0"
 
-      - name: Preparar Gradle 9.6.0
+      - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.6.0"
 
-      - name: Compilar APK Release
+      - name: Compilar, verificar assinatura e gerar checksum
         shell: bash
+        env:
+          CI_KEYSTORE_PATH: ${{ env.CI_KEYSTORE_PATH }}
+          CI_KEYSTORE_PASSWORD: ${{ secrets.SHOPPING_KEYSTORE_PASSWORD }}
+          CI_KEY_ALIAS: ${{ secrets.SHOPPING_KEY_ALIAS }}
+          CI_KEY_PASSWORD: ${{ secrets.SHOPPING_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          gradle --no-daemon -p "$PROJECT_DIR" :app:assembleRelease
-          APK="$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk"
-          test -s "$APK"
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools/36.0.0" -name apksigner -type f | head -n 1)"
-          test -x "$APKSIGNER"
-          "$APKSIGNER" verify --verbose "$APK"
-          mkdir -p release-files
-          cp "$APK" release-files/ShoppingList.apk
-          if [[ -f "$APK.idsig" ]]; then
-            cp "$APK.idsig" release-files/ShoppingList.apk.idsig
+
+          if [[ -f "$PROJECT_DIR/gradlew" ]]; then
+            chmod +x "$PROJECT_DIR/gradlew"
+            GRADLE_CMD=("$PROJECT_DIR/gradlew")
           else
-            echo "::error::O build não gerou o arquivo de assinatura V4 (.idsig)."
+            GRADLE_CMD=(gradle)
+          fi
+
+          "${GRADLE_CMD[@]}" --no-daemon --stacktrace -p "$PROJECT_DIR" "$APP_MODULE_PATH:assembleRelease"
+
+          mapfile -t APK_FILES < <(find "$APP_DIR/build/outputs/apk" -type f -path '*/release/*.apk' ! -name '*-unsigned.apk' ! -name '*androidTest*' 2>/dev/null | sort)
+          if [[ "${#APK_FILES[@]}" -ne 1 ]]; then
+            echo "::error::Esperava exatamente um APK Release, encontrei ${#APK_FILES[@]}."
+            find "$APP_DIR/build/outputs" -type f -maxdepth 7 -print 2>/dev/null || true
             exit 1
           fi
+
+          APK="${APK_FILES[0]}"
+          test -s "$APK"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          test -x "$APKSIGNER"
+
+          mkdir -p release-files
+          cp "$APK" release-files/ShoppingList.apk
+          if [[ ! -s "$APK.idsig" ]]; then
+            echo "::error::A assinatura V4 não foi gerada. Verifique a configuração Android Gradle do módulo."
+            exit 1
+          fi
+          cp "$APK.idsig" release-files/ShoppingList.apk.idsig
+
+          "$APKSIGNER" verify --verbose --print-certs release-files/ShoppingList.apk 2>&1 | tee release-files/signature-report.txt
+          for scheme in v1 v2 v3; do
+            if ! grep -Eiq "Verified using ${scheme} scheme.*: true" release-files/signature-report.txt; then
+              echo "::error::A assinatura ${scheme^^} não foi confirmada."
+              exit 1
+            fi
+          done
+
           sha256sum release-files/ShoppingList.apk | awk '{print $1}' > release-files/sha256.txt
+          echo "APK validado. Assinatura V4 confirmada pela presença do arquivo .idsig."
+
+      - name: Guardar APK como artefato de compilação
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShoppingList-APK-${{ inputs.version_name }}
+          path: |
+            release-files/ShoppingList.apk
+            release-files/ShoppingList.apk.idsig
+            release-files/sha256.txt
+            release-files/signature-report.txt
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Publicar Release com APK e assinatura V4
         uses: softprops/action-gh-release@v2
+        env:
+          CHANGELOG: ${{ inputs.changelog }}
         with:
           tag_name: v${{ inputs.version_name }}
           target_commitish: main
           name: Shopping List v${{ inputs.version_name }}
-          body: ${{ inputs.changelog }}
+          body: ${{ env.CHANGELOG }}
           files: |
             release-files/ShoppingList.apk
             release-files/ShoppingList.apk.idsig
@@ -152,20 +291,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          SHA256="$(cat release-files/sha256.txt)"
-          APK_URL="https://github.com/$REPOSITORY/releases/download/v$VERSION_NAME/ShoppingList.apk"
           python3 - <<'PY'
-          import json, os
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          apk = Path("release-files/ShoppingList.apk")
+          digest = hashlib.sha256(apk.read_bytes()).hexdigest()
           data = {
-            "versionCode": int(os.environ["VERSION_CODE"]),
-            "versionName": os.environ["VERSION_NAME"],
-            "apkUrl": "https://github.com/" + os.environ["REPOSITORY"] + "/releases/download/v" + os.environ["VERSION_NAME"] + "/ShoppingList.apk",
-            "sha256": open("release-files/sha256.txt").read().strip(),
-            "changelog": os.environ["CHANGELOG"]
+              "versionCode": int(os.environ["VERSION_CODE"]),
+              "versionName": os.environ["VERSION_NAME"],
+              "apkUrl": f"https://github.com/{os.environ['REPOSITORY']}/releases/download/v{os.environ['VERSION_NAME']}/ShoppingList.apk",
+              "sha256": digest,
+              "changelog": os.environ["CHANGELOG"],
           }
-          with open("update.json", "w") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            f.write("\n")
+          Path("update.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           PY
 
       - name: Salvar manifesto na branch main
