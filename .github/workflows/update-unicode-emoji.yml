@@ -1,0 +1,41 @@
+name: Atualizar catálogo Unicode Emoji
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/update-unicode-emoji.yml"
+      - "tools/update_unicode_emoji.py"
+  schedule:
+    - cron: "17 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: unicode-emoji-catalog
+  cancel-in-progress: false
+
+jobs:
+  update-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Consultar Unicode e gerar catálogo
+        run: python tools/update_unicode_emoji.py
+
+      - name: Publicar alterações do catálogo
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Atualiza catálogo oficial Unicode Emoji"
+          file_pattern: |
+            android/app/src/main/assets/emoji/emoji_catalog_pt.tsv
+            android/app/src/main/assets/emoji/emoji_catalog_manifest.json
