@@ -1,10 +1,11 @@
 package br.com.shoppinglist.app;
 
 import android.content.Context;
-import org.json.JSONObject;
-import java.io.ByteArrayOutputStream;
+import android.os.Handler;
+import android.os.Looper;
+import java.io.BufferedReader;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStreamReader;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,14 +20,21 @@ import java.util.Locale;
  */
 public final class EmojiCatalog {
     public static final String UNICODE_VERSION = "18.0";
+    public static final int TOTAL_EMOJI_COUNT = 3963;
     private static volatile List<EmojiEntry> cachedAll;
+    private static volatile boolean loading;
+    private static final Object LOAD_LOCK = new Object();
+    private static final List<Runnable> LOAD_CALLBACKS = new ArrayList<>();
+    private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
 
     public static final class EmojiEntry {
         public final String emoji;
         public final String name;
+        private final String searchable;
         EmojiEntry(String emoji, String name) {
             this.emoji = emoji;
             this.name = name;
+            this.searchable = normalize(name + " " + searchAliases(emoji));
         }
     }
 
@@ -104,59 +112,95 @@ public final class EmojiCatalog {
 
     private EmojiCatalog() {}
 
-    /** Loads the full 3,963 fully-qualified Unicode 18.0 emoji set from local APK assets. */
+    /**
+     * Reads a compact TSV catalog. Call preload() from the UI before search so
+     * disk I/O and sorting never run while Android is drawing the dialog.
+     */
     public static List<EmojiEntry> all(Context context) {
         List<EmojiEntry> local = cachedAll;
         if (local != null) return local;
         synchronized (EmojiCatalog.class) {
             if (cachedAll != null) return cachedAll;
             List<EmojiEntry> result = new ArrayList<>();
-            try {
-                JSONObject universe = new JSONObject(readAsset(context, "emoji/emoji.json"));
-                JSONObject portuguese = new JSONObject(readAsset(context, "emoji/emoji_pt.json"));
-                Iterator<String> keys = universe.keys();
-                while (keys.hasNext()) {
-                    String glyph = keys.next();
-                    JSONObject info = universe.optJSONObject(glyph);
-                    if (info == null || info.optInt("status", 0) != 2) continue;
-                    String localized = portuguese.optString(glyph, "");
-                    if (localized == null || localized.trim().isEmpty()) continue;
-                    String name = localized.replace(":", "").replace('_', ' ').trim();
-                    result.add(new EmojiEntry(glyph, name));
+            try (InputStream input = context.getAssets().open("emoji/emoji_catalog_pt.tsv");
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"), 8192)) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    int separator = line.indexOf('\t');
+                    if (separator <= 0 || separator >= line.length() - 1) continue;
+                    String glyph = line.substring(0, separator);
+                    String name = line.substring(separator + 1).trim();
+                    if (!glyph.isEmpty() && !name.isEmpty()) result.add(new EmojiEntry(glyph, name));
                 }
-                Collections.sort(result, Comparator.comparing((EmojiEntry e) -> normalize(e.name)));
+                if (result.isEmpty()) throw new IllegalStateException("Catálogo vazio.");
+                Collections.sort(result, Comparator.comparing((EmojiEntry entry) -> entry.searchable));
             } catch (Exception ignored) {
                 result.clear();
-                for (String glyph : QUICK) result.add(new EmojiEntry(glyph, glyph));
+                for (String glyph : QUICK) {
+                    String aliases = searchAliases(glyph);
+                    result.add(new EmojiEntry(glyph, aliases.isEmpty() ? glyph : aliases));
+                }
             }
             cachedAll = Collections.unmodifiableList(result);
             return cachedAll;
         }
     }
 
-    public static List<EmojiEntry> quick(Context context) {
-        List<EmojiEntry> all = all(context);
-        List<EmojiEntry> result = new ArrayList<>();
-        for (String glyph : QUICK) {
-            for (EmojiEntry entry : all) {
-                if (entry.emoji.equals(glyph)) {
-                    result.add(entry);
-                    break;
-                }
+    /** Loads and indexes the catalog on a worker thread, then returns to the UI thread. */
+    public static void preload(Context context, Runnable callback) {
+        synchronized (LOAD_LOCK) {
+            if (cachedAll != null) {
+                if (callback != null) MAIN_HANDLER.post(callback);
+                return;
             }
+            if (callback != null) LOAD_CALLBACKS.add(callback);
+            if (loading) return;
+            loading = true;
+        }
+        Context appContext = context.getApplicationContext();
+        Thread worker = new Thread(() -> {
+            try {
+                all(appContext);
+            } finally {
+                List<Runnable> callbacks;
+                synchronized (LOAD_LOCK) {
+                    loading = false;
+                    callbacks = new ArrayList<>(LOAD_CALLBACKS);
+                    LOAD_CALLBACKS.clear();
+                }
+                for (Runnable action : callbacks) MAIN_HANDLER.post(action);
+            }
+        }, "shopping-list-emoji-loader");
+        worker.setPriority(Thread.NORM_PRIORITY - 1);
+        worker.start();
+    }
+
+    public static boolean isLoaded() {
+        return cachedAll != null;
+    }
+
+    /** Small first screen: does not parse the complete catalog. */
+    public static List<EmojiEntry> quick(Context context) {
+        List<EmojiEntry> result = new ArrayList<>(QUICK.length);
+        for (String glyph : QUICK) {
+            String aliases = searchAliases(glyph);
+            result.add(new EmojiEntry(glyph, aliases.isEmpty() ? glyph : aliases));
         }
         return result;
     }
 
-    /** Searches the complete bundled emoji set by Portuguese name. */
+    /** Searches the cached Unicode catalog without disk access or repeated normalization. */
     public static List<EmojiEntry> search(Context context, String query, int limit) {
         String q = normalize(query);
+        List<EmojiEntry> source = cachedAll;
+        if (source == null) return quick(context);
         List<EmojiEntry> result = new ArrayList<>();
         if (q.isEmpty()) return quick(context);
-        for (EmojiEntry entry : all(context)) {
-            if (normalize(entry.name).contains(q) || normalize(searchAliases(entry.emoji)).contains(q)) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        for (EmojiEntry entry : source) {
+            if (entry.searchable.contains(q)) {
                 result.add(entry);
-                if (result.size() >= limit) break;
+                if (result.size() >= safeLimit) break;
             }
         }
         return result;
@@ -243,13 +287,4 @@ public final class EmojiCatalog {
         return s.replaceAll("[^a-z0-9]+", " ").trim().replaceAll("\\s+", " ");
     }
 
-    private static String readAsset(Context context, String path) throws Exception {
-        try (InputStream input = context.getAssets().open(path);
-             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
-            int read;
-            while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
-            return output.toString(StandardCharsets.UTF_8.name());
-        }
-    }
 }
