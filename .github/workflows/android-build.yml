@@ -32,41 +32,47 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validar e extrair projeto Android
+      - name: Localizar projeto Android
         shell: bash
         run: |
           set -euo pipefail
-          ARCHIVE="$GITHUB_WORKSPACE/Shopping_List_Project_com_Atualizador.zip"
-          EXTRACT_DIR="$GITHUB_WORKSPACE/_project"
-          test -s "$ARCHIVE"
-          unzip -tq "$ARCHIVE"
-          rm -rf "$EXTRACT_DIR"
-          mkdir -p "$EXTRACT_DIR"
-          unzip -q "$ARCHIVE" -d "$EXTRACT_DIR"
 
-          mapfile -t APP_BUILDS < <(find "$EXTRACT_DIR" -type f -path '*/app/build.gradle' -not -path '*/build/*' | sort)
-          if [[ "${#APP_BUILDS[@]}" -ne 1 ]]; then
-            echo "::error::Esperava encontrar exatamente um app/build.gradle; encontrei ${#APP_BUILDS[@]}."
-            find "$EXTRACT_DIR" -maxdepth 5 -type f \( -name 'settings.gradle' -o -name 'settings.gradle.kts' -o -path '*/app/build.gradle' \) -print
-            exit 1
-          fi
+          if [[ -f "$GITHUB_WORKSPACE/android/app/build.gradle" && ( -f "$GITHUB_WORKSPACE/android/settings.gradle" || -f "$GITHUB_WORKSPACE/android/settings.gradle.kts" ) ]]; then
+            PROJECT_DIR="$GITHUB_WORKSPACE/android"
+            APP_DIR="$PROJECT_DIR/app"
+            APP_BUILD_FILE="$APP_DIR/build.gradle"
+            echo "Usando fontes Android versionadas em android/."
+          else
+            ARCHIVE="$GITHUB_WORKSPACE/Shopping_List_Project_com_Atualizador.zip"
+            EXTRACT_DIR="$GITHUB_WORKSPACE/_project"
+            test -s "$ARCHIVE"
+            unzip -tq "$ARCHIVE"
+            rm -rf "$EXTRACT_DIR"
+            mkdir -p "$EXTRACT_DIR"
+            unzip -q "$ARCHIVE" -d "$EXTRACT_DIR"
 
-          APP_BUILD_FILE="${APP_BUILDS[0]}"
-          APP_DIR="$(dirname "$APP_BUILD_FILE")"
-          PROJECT_DIR=""
-          candidate="$(dirname "$APP_DIR")"
-          while [[ "$candidate" == "$EXTRACT_DIR"* ]]; do
-            if [[ -f "$candidate/settings.gradle" || -f "$candidate/settings.gradle.kts" ]]; then
-              PROJECT_DIR="$candidate"
-              break
+            mapfile -t APP_BUILDS < <(find "$EXTRACT_DIR" -type f -path '*/app/build.gradle' -not -path '*/build/*' | sort)
+            if [[ "${#APP_BUILDS[@]}" -ne 1 ]]; then
+              echo "::error::Esperava encontrar exatamente um app/build.gradle; encontrei ${#APP_BUILDS[@]}."
+              exit 1
             fi
-            [[ "$candidate" == "$EXTRACT_DIR" ]] && break
-            candidate="$(dirname "$candidate")"
-          done
-
-          if [[ -z "$PROJECT_DIR" ]]; then
-            echo "::error::Não encontrei settings.gradle ou settings.gradle.kts acima do módulo app."
-            exit 1
+            APP_BUILD_FILE="${APP_BUILDS[0]}"
+            APP_DIR="$(dirname "$APP_BUILD_FILE")"
+            PROJECT_DIR=""
+            candidate="$(dirname "$APP_DIR")"
+            while [[ "$candidate" == "$EXTRACT_DIR"* ]]; do
+              if [[ -f "$candidate/settings.gradle" || -f "$candidate/settings.gradle.kts" ]]; then
+                PROJECT_DIR="$candidate"
+                break
+              fi
+              [[ "$candidate" == "$EXTRACT_DIR" ]] && break
+              candidate="$(dirname "$candidate")"
+            done
+            if [[ -z "$PROJECT_DIR" ]]; then
+              echo "::error::Não encontrei settings.gradle ou settings.gradle.kts acima do módulo app."
+              exit 1
+            fi
+            echo "Usando projeto extraído do ZIP."
           fi
 
           RELATIVE_MODULE="${APP_DIR#"$PROJECT_DIR"/}"
@@ -78,8 +84,8 @@ jobs:
             echo "APP_MODULE_PATH=$APP_MODULE_PATH"
           } >> "$GITHUB_ENV"
 
-          echo "Projeto Android localizado em: ${PROJECT_DIR#"$GITHUB_WORKSPACE/"}"
-          echo "Módulo de aplicativo: $APP_MODULE_PATH"
+          echo "Projeto Android: $PROJECT_DIR"
+          echo "Módulo: $APP_MODULE_PATH"
 
       - name: Preparar e validar assinatura privada
         shell: bash
@@ -106,7 +112,7 @@ jobs:
           chmod 600 "$CI_KEYSTORE_PATH" "$SIGNING_DIR/signing.properties"
           echo "CI_KEYSTORE_PATH=$CI_KEYSTORE_PATH" >> "$GITHUB_ENV"
 
-      - name: Definir versão e habilitar assinaturas V1 a V4
+      - name: Definir versão do aplicativo
         env:
           VERSION_CODE: ${{ inputs.version_code }}
           VERSION_NAME: ${{ inputs.version_name }}
@@ -126,61 +132,34 @@ jobs:
           if not re.fullmatch(r"[0-9A-Za-z._+-]{1,40}", name):
               raise SystemExit("version_name inválido. Use somente letras, números, ponto, _, + e -.")
 
-          code = int(code_text)
           manifest_path = pathlib.Path(os.environ["GITHUB_WORKSPACE"]) / "update.json"
           if not manifest_path.is_file():
               raise SystemExit("update.json não foi encontrado.")
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
           current_code = int(manifest.get("versionCode", 0))
           has_published_apk = bool(str(manifest.get("apkUrl", "")).strip())
-          if has_published_apk and code <= current_code:
+          if has_published_apk and int(code_text) <= current_code:
               raise SystemExit(f"version_code precisa ser maior que a versão publicada ({current_code}).")
 
           build_file = pathlib.Path(os.environ["APP_BUILD_FILE"])
           source = build_file.read_text(encoding="utf-8")
-
           source, code_count = re.subn(
-              r"(\bversionCode\s*(?:=\s*)?)\d+",
-              lambda m: m.group(1) + str(code),
+              r"(\\bversionCode\\s*(?:=\\s*)?)\\d+",
+              lambda m: m.group(1) + code_text,
               source,
               count=1,
           )
           source, name_count = re.subn(
-              r"""(\bversionName\s*(?:=\s*)?)(['"])[^'"]*\2""",
+              r"""(\\bversionName\\s*(?:=\\s*)?)(['"])[^'"]*\\2""",
               lambda m: m.group(1) + m.group(2) + name + m.group(2),
               source,
               count=1,
           )
           if code_count != 1 or name_count != 1:
-              raise SystemExit("Não encontrei exatamente uma definição de versionCode e versionName em app/build.gradle.")
-
-          # Configuração injetada somente no diretório temporário da compilação.
-          # As quatro versões usam a mesma chave privada de distribuição.
-          source += r'''
-
-          // Configuração de assinatura do GitHub Actions; não adicionar credenciais ao Git.
-          android {
-              signingConfigs {
-                  ciRelease {
-                      storeFile file(System.getenv("CI_KEYSTORE_PATH"))
-                      storePassword System.getenv("CI_KEYSTORE_PASSWORD")
-                      keyAlias System.getenv("CI_KEY_ALIAS")
-                      keyPassword System.getenv("CI_KEY_PASSWORD")
-                      enableV1Signing true
-                      enableV2Signing true
-                      enableV3Signing true
-                      enableV4Signing true
-                  }
-              }
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.ciRelease
-                  }
-              }
-          }
-          '''
+              raise SystemExit("Não encontrei exatamente uma definição de versionCode e versionName.")
           build_file.write_text(source, encoding="utf-8")
-          print(f"Versão configurada: {name} ({code}); assinaturas V1/V2/V3/V4 habilitadas.")
+          print(f"Versão configurada: {name} ({code}).")
+          print("A assinatura Release usa signingConfigs.release do projeto, configurada com signing.properties.")
           PY
 
       - name: Instalar JDK 17
