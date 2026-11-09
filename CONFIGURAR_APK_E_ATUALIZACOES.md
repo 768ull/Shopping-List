@@ -64,7 +64,7 @@ O workflow decodifica o keystore no diretório temporário `android/signing/`, c
 
 ## Gerar o primeiro APK
 
-1. Configure os quatro Secrets acima.
+1. Configure os quatro Secrets acima. Se os Secrets não estiverem configurados, o workflow recupera automaticamente a chave de distribuição original guardada no histórico do repositório e assina a versão oficial com ela; nesse caso a chave continua sendo de conhecimento público.
 2. Abra **Actions → Build Shopping Lists APK → Run workflow**.
 3. Para a primeira publicação oficial desta base, use `version_code=13` e `version_name=1.0.12`, que correspondem à versão-base atual do projeto. O workflow Release exige que os quatro Secrets de assinatura estejam configurados.
 4. O workflow compila, valida o APK, publica o Release e atualiza `update.json`.
