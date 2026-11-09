@@ -85,7 +85,7 @@ A versão-base do projeto agora é `versionCode 11` / `1.0.10`. A distribuição
 
 **Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública, portanto não é possível reconstruir a chave privada nem assinar um APK de atualização compatível com aquela instalação. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
 
-O APK Debug `1.0.9` (`versionCode 10`) está publicado como arquivo direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test). Baixe `Shopping-Lists-debug.apk` diretamente em **Assets**. O ZIP de artefatos das Actions serve apenas para inspeção; não extraia e instale a partir dele no celular.
+O APK Debug `1.0.10` (`versionCode 11`) será publicado na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test), com APK direto e uma alternativa ZIP para extrair antes de instalar. O ZIP de artefatos das Actions serve apenas para inspeção; não extraia e instale a partir dele no celular.
 
 ## Baixar o aplicativo pelo GitHub Mobile
 
