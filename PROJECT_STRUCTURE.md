@@ -1,6 +1,6 @@
 # Estrutura do repositório
 
-## Árvore atual
+## Arquivos visíveis
 
 ```text
 Shopping-List/
@@ -14,25 +14,28 @@ Shopping-List/
 └── update.json
 ```
 
-## Papel de cada item
+## Conteúdo do ZIP
 
-- **ZIP do projeto:** contém o projeto Android original. O pipeline o extrai em um diretório temporário chamado `_project`.
-- **Workflow:** localiza o projeto extraído no caminho esperado `_project/ShoppingListProject`, compila o módulo `app`, verifica o APK e publica os artefatos.
-- **Manifesto:** o aplicativo deve consultar o arquivo `update.json` na branch `main` para verificar se existe uma versão mais recente.
-- **Guia de configuração:** documenta os secrets de assinatura que precisam ser cadastrados no GitHub.
+O código-fonte Android continua dentro de `Shopping_List_Project_com_Atualizador.zip`. A estrutura interna esperada contém um módulo Android `app` e um arquivo Gradle de configuração. O workflow não depende mais do nome fixo da pasta `ShoppingListProject`: ele procura exatamente um `app/build.gradle` e localiza a raiz pelo `settings.gradle` ou `settings.gradle.kts`.
 
 ## Fluxo de compilação
 
-1. Checkout da branch.
-2. Extração de `Shopping_List_Project_com_Atualizador.zip`.
-3. Preparação do keystore privado a partir dos GitHub Actions Secrets.
-4. Atualização de `versionCode` e `versionName` no Gradle.
-5. Instalação do JDK e Android SDK.
-6. Compilação de `app:assembleRelease`.
-7. Verificação da assinatura e cálculo SHA-256.
-8. Publicação do APK no GitHub Release.
-9. Atualização de `update.json`.
+1. Checkout completo da branch.
+2. Teste de integridade e extração do ZIP.
+3. Localização do módulo `app` e da raiz Gradle.
+4. Validação do keystore privado, alias e senhas por GitHub Actions Secrets.
+5. Atualização de `versionCode` e `versionName`.
+6. Configuração das assinaturas V1, V2, V3 e V4.
+7. Instalação do JDK, Android SDK e Gradle.
+8. Compilação do APK Release.
+9. Verificação de V1/V2/V3, existência do arquivo V4 `.idsig` e cálculo SHA-256.
+10. Armazenamento do artefato e publicação do GitHub Release.
+11. Atualização de `update.json`.
 
-## Limitação conhecida e próxima migração
+## Segurança
 
-Esta árvore documenta os caminhos que estão efetivamente visíveis na raiz do repositório. O conteúdo interno do ZIP não foi expandido nesta revisão; portanto, não inventamos nomes de módulos, pastas ou arquivos internos. A migração correta para uma estrutura Android convencional deve preservar os arquivos reais do ZIP e só então ajustar o workflow para apontar ao `settings.gradle` e ao módulo `app` extraídos.
+A chave de desenvolvimento incluída no ZIP está exposta porque o repositório é público. O workflow não a utiliza automaticamente: exige uma chave privada de distribuição em GitHub Actions Secrets. Antes de trocar a chave, verifique se já existem instalações usando a chave antiga, pois a identidade de assinatura precisa ser preservada para atualizações normais.
+
+## Limitação da auditoria
+
+A integração GitHub usada nesta sessão não conseguiu fornecer os bytes do ZIP. Por isso, a árvore interna, as dependências, o código do atualizador e os recursos do aplicativo não foram inspecionados nem modificados nesta revisão. Não inventamos nomes de arquivos internos nem declaramos uma compilação como aprovada sem executá-la.
