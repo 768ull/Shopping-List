@@ -73,7 +73,7 @@ O pipeline confirma V1/V2/V3 com `apksigner` e exige o arquivo `.idsig` para V4.
 
 ## Publicar atualizações futuras
 
-Aumente `version_code` em cada publicação: a próxima será 8, depois 9 e assim por diante. Use nomes de versão crescentes, por exemplo 1.0.8 e 1.0.9. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `ShoppingList.apk`, `ShoppingList.apk.idsig`, SHA-256 e atualiza o manifesto.
+Aumente `version_code` em cada publicação: a próxima será 8, depois 9 e assim por diante. Use nomes de versão crescentes, por exemplo 1.0.8 e 1.0.9. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `Shopping-Lists.apk`, `Shopping-Lists.apk.idsig`, SHA-256 e atualiza o manifesto.
 
 O aplicativo consulta:
 `https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
