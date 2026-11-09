@@ -139,8 +139,37 @@ jobs:
           printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
 
           "$APKSIGNER" verify --verbose --print-certs verification-output/Shopping-Lists-debug.apk 2>&1 | tee verification-output/signature-report.txt
+          grep -Eiq "Verified using v1 scheme.*: true" verification-output/signature-report.txt
           grep -Eiq "Verified using v2 scheme.*: true" verification-output/signature-report.txt
+          grep -Eiq "Verified using v3 scheme.*: true" verification-output/signature-report.txt
           sha256sum verification-output/Shopping-Lists-debug.apk > verification-output/sha256.txt
+
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZIP_STORED, ZipFile
+
+          output = Path("verification-output")
+          apk = output / "Shopping-Lists-debug.apk"
+          info = output / "LEIA-ANTES-DE-INSTALAR.txt"
+          info.write_text(
+              "Este ZIP contém o APK completo do Shopping Lists para Android.\\n"
+              "1. Extraia Shopping-Lists-debug.apk para uma pasta do celular.\\n"
+              "2. Confira o arquivo sha256.txt se souber verificar SHA-256.\\n"
+              "3. Abra o APK extraído para iniciar o instalador do Android.\\n"
+              "Não tente instalar o arquivo ZIP.\\n",
+              encoding="utf-8",
+          )
+          archive_path = output / "Shopping-Lists-debug-download.zip"
+          with ZipFile(archive_path, "w", compression=ZIP_STORED) as archive:
+              archive.write(apk, arcname="Shopping-Lists-debug.apk")
+              archive.write(output / "sha256.txt", arcname="sha256.txt")
+              archive.write(info, arcname=info.name)
+          with ZipFile(archive_path) as archive:
+              broken = archive.testzip()
+              if broken:
+                  raise SystemExit(f"ZIP alternativo corrompido: {broken}")
+          PY
+          sha256sum verification-output/Shopping-Lists-debug-download.zip > verification-output/sha256-zip.txt
 
       - name: Upload verified Debug test APK (not for release updates)
         uses: actions/upload-artifact@v4
@@ -174,14 +203,18 @@ jobs:
           make_latest: false
           body: |
             Download direto do APK de teste (Debug) do Shopping Lists.
-            Baixe o arquivo Shopping-Lists-debug.apk diretamente em Assets.
+            Opção 1: baixe Shopping-Lists-debug-download.zip, extraia Shopping-Lists-debug.apk e só então instale.
+            Opção 2: baixe o APK diretamente, se preferir.
 
             Requisitos: Android 11 ou mais recente e processador 64 bits (arm64-v8a).
-            Confira a integridade comparando sha256.txt.
+            A compilação verifica integridade ZIP, checksum SHA-256 e assinaturas V1/V2/V3.
             Este APK usa o pacote br.com.shoppinglist.debug e não atualiza uma instalação Release br.com.shoppinglist.
           files: |
             verification-output/Shopping-Lists-debug.apk
+            verification-output/Shopping-Lists-debug-download.zip
             verification-output/sha256.txt
+            verification-output/sha256-zip.txt
             verification-output/signature-report.txt
+            verification-output/LEIA-ANTES-DE-INSTALAR.txt
           overwrite_files: true
           fail_on_unmatched_files: true
