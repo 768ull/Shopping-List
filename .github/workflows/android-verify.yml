@@ -71,10 +71,10 @@ jobs:
           test -n "$EXPECTED_VERSION_NAME"
 
           BADGING="$("$AAPT" dump badging "$APK")"
-          printf '%s\\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${EXPECTED_VERSION_CODE}' versionName='${EXPECTED_VERSION_NAME}'"
-          printf '%s\\n' "$BADGING" | grep -F "sdkVersion:'30'"
-          printf '%s\\n' "$BADGING" | grep -F "targetSdkVersion:'36'"
-          printf '%s\\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
+          printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${EXPECTED_VERSION_CODE}' versionName='${EXPECTED_VERSION_NAME}'"
+          printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
+          printf '%s\n' "$BADGING" | grep -F "targetSdkVersion:'36'"
+          printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
 
           if [[ "$EXPECTED_VERSION_NAME" == *debug* ]]; then
             echo "::error::A versão Release não pode conter a marcação debug."
@@ -82,7 +82,7 @@ jobs:
           fi
 
           MANIFEST_TREE="$("$AAPT" dump xmltree "$APK" AndroidManifest.xml)"
-          if printf '%s\\n' "$MANIFEST_TREE" | grep -Eiq 'android:debuggable.*=(true|0xffffffff)'; then
+          if printf '%s\n' "$MANIFEST_TREE" | grep -Eiq 'android:debuggable.*=(true|0xffffffff)'; then
             echo "::error::O APK Release está marcado como debuggable."
             exit 1
           fi
