@@ -285,6 +285,8 @@ jobs:
           target_commitish: main
           name: Shopping Lists v${{ inputs.version_name }}
           body_path: release-files/CHANGELOG.md
+          prerelease: false
+          make_latest: true
           files: |
             release-files/Shopping-Lists.apk
             release-files/Shopping-Lists.apk.idsig
