@@ -1,4 +1,4 @@
-name: Build Shopping List APK
+name: Build Shopping Lists APK
 
 on:
   workflow_dispatch:
@@ -258,7 +258,7 @@ jobs:
         with:
           tag_name: v${{ inputs.version_name }}
           target_commitish: main
-          name: Shopping List v${{ inputs.version_name }}
+          name: Shopping Lists v${{ inputs.version_name }}
           body_path: release-files/CHANGELOG.md
           files: |
             release-files/ShoppingList.apk
@@ -297,5 +297,5 @@ jobs:
       - name: Salvar manifesto na branch main
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Atualiza manifesto do Shopping List v${{ inputs.version_name }}"
+          commit_message: "Atualiza manifesto do Shopping Lists v${{ inputs.version_name }}"
           file_pattern: update.json
