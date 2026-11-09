@@ -1,6 +1,6 @@
 Shopping Lists — Catálogo de emojis de produtos
 
-Versão dos dados: Unicode Emoji 18.0 (15 de setembro de 2026).
+Dados base: Unicode Emoji 18.0, arquivo oficial de teste datado de 30 de abril de 2026. O catálogo do aplicativo é filtrado para conter somente itens físicos compráveis.
 O aplicativo não carrega o catálogo inteiro de emojis Unicode. O seletor contém somente
 ícones filtrados que representam produtos físicos que podem aparecer em uma lista de compras.
 
