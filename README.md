@@ -80,3 +80,12 @@ O APK produzido por `android-verify.yml` é somente de teste e usa o identificad
 A versão-base do projeto agora é `versionCode 2` / `1.0.1`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping Lists APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões.
 
 **Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública, portanto não é possível reconstruir a chave privada nem assinar um APK de atualização compatível com aquela instalação. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
+
+## Baixar o aplicativo pelo GitHub Mobile
+
+As versões instaláveis do Shopping Lists são publicadas na área **Releases** deste repositório. No aplicativo oficial do GitHub para Android, abra este repositório, entre em **Releases**, escolha a versão desejada e toque no arquivo **ShoppingList.apk** em **Assets**. Não use **Code → Download ZIP** para instalar: esse ZIP contém o código-fonte, não o aplicativo.
+
+- [Ver todas as versões publicadas (Releases)](https://github.com/768ull/Shopping-List/releases)
+- [Baixar a versão mais recente](https://github.com/768ull/Shopping-List/releases/latest)
+
+Cada nova publicação mantém as versões anteriores na lista de Releases. Uma versão só aparece ali depois que o workflow **Build Shopping Lists APK** concluir a compilação e publicar o APK. As versões antigas que nunca tiveram um APK publicado não podem ser mostradas como downloads sem que seus respectivos arquivos sejam recuperados e compilados.
