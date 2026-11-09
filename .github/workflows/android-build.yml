@@ -36,43 +36,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          PROJECT_DIR="$GITHUB_WORKSPACE/android"
+          APP_DIR="$PROJECT_DIR/app"
+          APP_BUILD_FILE="$APP_DIR/build.gradle"
 
-          if [[ -f "$GITHUB_WORKSPACE/android/app/build.gradle" && ( -f "$GITHUB_WORKSPACE/android/settings.gradle" || -f "$GITHUB_WORKSPACE/android/settings.gradle.kts" ) ]]; then
-            PROJECT_DIR="$GITHUB_WORKSPACE/android"
-            APP_DIR="$PROJECT_DIR/app"
-            APP_BUILD_FILE="$APP_DIR/build.gradle"
-            echo "Usando fontes Android versionadas em android/."
-          else
-            ARCHIVE="$GITHUB_WORKSPACE/Shopping_List_Project_com_Atualizador.zip"
-            EXTRACT_DIR="$GITHUB_WORKSPACE/_project"
-            test -s "$ARCHIVE"
-            unzip -tq "$ARCHIVE"
-            rm -rf "$EXTRACT_DIR"
-            mkdir -p "$EXTRACT_DIR"
-            unzip -q "$ARCHIVE" -d "$EXTRACT_DIR"
-
-            mapfile -t APP_BUILDS < <(find "$EXTRACT_DIR" -type f -path '*/app/build.gradle' -not -path '*/build/*' | sort)
-            if [[ "${#APP_BUILDS[@]}" -ne 1 ]]; then
-              echo "::error::Esperava encontrar exatamente um app/build.gradle; encontrei ${#APP_BUILDS[@]}."
-              exit 1
-            fi
-            APP_BUILD_FILE="${APP_BUILDS[0]}"
-            APP_DIR="$(dirname "$APP_BUILD_FILE")"
-            PROJECT_DIR=""
-            candidate="$(dirname "$APP_DIR")"
-            while [[ "$candidate" == "$EXTRACT_DIR"* ]]; do
-              if [[ -f "$candidate/settings.gradle" || -f "$candidate/settings.gradle.kts" ]]; then
-                PROJECT_DIR="$candidate"
-                break
-              fi
-              [[ "$candidate" == "$EXTRACT_DIR" ]] && break
-              candidate="$(dirname "$candidate")"
-            done
-            if [[ -z "$PROJECT_DIR" ]]; then
-              echo "::error::Não encontrei settings.gradle ou settings.gradle.kts acima do módulo app."
-              exit 1
-            fi
-            echo "Usando projeto extraído do ZIP."
+          if [[ ! -f "$PROJECT_DIR/settings.gradle" || ! -f "$APP_BUILD_FILE" ]]; then
+            echo "::error::Projeto Android incompleto: android/settings.gradle ou android/app/build.gradle não encontrado."
+            exit 1
           fi
 
           RELATIVE_MODULE="${APP_DIR#"$PROJECT_DIR"/}"
