@@ -27,26 +27,31 @@ public final class StickerCatalog {
     }
 
     private static final Sticker[] ITEMS = {
-        new Sticker("OUTRO", "Produto sem categoria", "PR", 0xFFE9E2D5, 0xFF594B38),
-        new Sticker("ALIMENTO", "Alimentos e ingredientes", "AL", 0xFFFFE4B8, 0xFF8B4A18),
-        new Sticker("LIMPEZA", "Limpeza", "LZ", 0xFFDDF2EA, 0xFF176B51),
-        new Sticker("ELETRONICO", "Eletrônicos e acessórios", "EL", 0xFFDDEBFF, 0xFF28558F),
-        new Sticker("ROUPA", "Roupas e calçados", "RP", 0xFFFFDFE8, 0xFF963D5C),
-        new Sticker("BELEZA", "Higiene e beleza", "HB", 0xFFF2DFF5, 0xFF76417F),
-        new Sticker("PAPELARIA", "Papelaria e escritório", "PP", 0xFFE4E8FF, 0xFF444D91),
-        new Sticker("FERRAMENTA", "Ferramentas", "FT", 0xFFFFE8D2, 0xFF88501F),
-        new Sticker("CASA", "Casa e utilidades", "CS", 0xFFFFE9D6, 0xFF89552B),
-        new Sticker("COZINHA", "Cozinha e utensílios", "CZ", 0xFFFFE8B8, 0xFF805516),
-        new Sticker("PET", "Produtos para animais", "PT", 0xFFE4F1D9, 0xFF3F6A32),
-        new Sticker("BRINQUEDO", "Brinquedos e jogos", "BJ", 0xFFFFE1B5, 0xFF93541C),
-        new Sticker("AUTOMOVEL", "Carro e moto", "AU", 0xFFDCEBEE, 0xFF245A65),
-        new Sticker("BEBE", "Bebês e crianças", "BB", 0xFFFFE3E8, 0xFF9B475B),
-        new Sticker("ESPORTE", "Esportes e lazer", "ES", 0xFFDFF0D9, 0xFF3F6D38),
-        new Sticker("JARDIM", "Jardim e plantas", "JD", 0xFFDDF0D8, 0xFF376B36),
-        new Sticker("MOVEIS", "Móveis e decoração", "MV", 0xFFEADFCF, 0xFF70543A),
-        new Sticker("FARMACIA", "Farmácia e cuidados", "FC", 0xFFFFE0DC, 0xFF98443B),
-        new Sticker("CONSTRUCAO", "Construção e materiais", "OB", 0xFFFFE7C8, 0xFF8B5B26),
-        new Sticker("PRESENTE", "Presentes e acessórios", "PR", 0xFFF6DFF0, 0xFF81436D)
+        new Sticker("OUTRO", "Produto sem categoria", "\u{1F6CD}\u{FE0F}", 0xFFE9E2D5, 0xFF594B38),
+        new Sticker("ALIMENTO", "Alimentos e ingredientes", "\u{1F34E}", 0xFFFFE4B8, 0xFF8B4A18),
+        new Sticker("LINGUICA", "Linguiça", "\u{1F32D}", 0xFFFFE2C2, 0xFF8D4527),
+        new Sticker("SALAME", "Salame", "\u{1F356}", 0xFFFFD9D2, 0xFF923D37),
+        new Sticker("SALSICHA", "Salsicha", "\u{1F32D}", 0xFFFFE7CB, 0xFF9A5524),
+        new Sticker("PRESUNTO", "Presunto", "\u{1F356}", 0xFFFFE2D0, 0xFF96533D),
+        new Sticker("MORTADELA", "Mortadela", "\u{1F356}", 0xFFFFDCE0, 0xFF8B3E52),
+        new Sticker("LIMPEZA", "Limpeza", "\u{1F9F9}", 0xFFDDF2EA, 0xFF176B51),
+        new Sticker("ELETRONICO", "Eletrônicos e acessórios", "\u{1F4F1}", 0xFFDDEBFF, 0xFF28558F),
+        new Sticker("ROUPA", "Roupas e calçados", "\u{1F455}", 0xFFFFDFE8, 0xFF963D5C),
+        new Sticker("BELEZA", "Higiene e beleza", "\u{1F9F4}", 0xFFF2DFF5, 0xFF76417F),
+        new Sticker("PAPELARIA", "Papelaria e escritório", "\u{270F}\u{FE0F}", 0xFFE4E8FF, 0xFF444D91),
+        new Sticker("FERRAMENTA", "Ferramentas", "\u{1F527}", 0xFFFFE8D2, 0xFF88501F),
+        new Sticker("CASA", "Casa e utilidades", "\u{1F3E0}", 0xFFFFE9D6, 0xFF89552B),
+        new Sticker("COZINHA", "Cozinha e utensílios", "\u{1F373}", 0xFFFFE8B8, 0xFF805516),
+        new Sticker("PET", "Produtos para animais", "\u{1F43E}", 0xFFE4F1D9, 0xFF3F6A32),
+        new Sticker("BRINQUEDO", "Brinquedos e jogos", "\u{1F9F8}", 0xFFFFE1B5, 0xFF93541C),
+        new Sticker("AUTOMOVEL", "Carro e moto", "\u{1F697}", 0xFFDCEBEE, 0xFF245A65),
+        new Sticker("BEBE", "Bebês e crianças", "\u{1F37C}", 0xFFFFE3E8, 0xFF9B475B),
+        new Sticker("ESPORTE", "Esportes e lazer", "\u{26BD}", 0xFFDFF0D9, 0xFF3F6D38),
+        new Sticker("JARDIM", "Jardim e plantas", "\u{1FAB4}", 0xFFDDF0D8, 0xFF376B36),
+        new Sticker("MOVEIS", "Móveis e decoração", "\u{1F6CB}\u{FE0F}", 0xFFEADFCF, 0xFF70543A),
+        new Sticker("FARMACIA", "Farmácia e cuidados", "\u{1F48A}", 0xFFFFE0DC, 0xFF98443B),
+        new Sticker("CONSTRUCAO", "Construção e materiais", "\u{1F9F1}", 0xFFFFE7C8, 0xFF8B5B26),
+        new Sticker("PRESENTE", "Presentes e acessórios", "\u{1F381}", 0xFFF6DFF0, 0xFF81436D)
     };
 
     private StickerCatalog() {}
@@ -71,6 +76,11 @@ public final class StickerCatalog {
     public static String forText(String value) {
         String s = normalize(value);
         if (s.isEmpty()) return ITEMS[0].value();
+        if (hasAny(s, "linguica", "linguica calabresa", "linguica toscana")) return "sticker:LINGUICA";
+        if (hasAny(s, "salame")) return "sticker:SALAME";
+        if (hasAny(s, "salsicha")) return "sticker:SALSICHA";
+        if (hasAny(s, "presunto", "apresuntado")) return "sticker:PRESUNTO";
+        if (hasAny(s, "mortadela")) return "sticker:MORTADELA";
         if (hasAny(s, "detergente", "desinfetante", "agua sanitaria", "agua sanitaria", "agua sanitaria",
                 "limpador", "desengordurante", "amaciante", "sabao em po", "sabao liquido",
                 "alvejante", "amaciante", "lustra moveis", "limpa vidro", "cera", "polidor", "vassoura", "rodo", "balde", "pano de chao", "pano de limpeza", "saco de lixo", "inseticida", "luva de limpeza", "escova de limpeza", "produto de limpeza", "material de limpeza"))
