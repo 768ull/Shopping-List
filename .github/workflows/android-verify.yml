@@ -105,8 +105,10 @@ jobs:
           test -s "$APK"
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          ZIPALIGN="$ANDROID_HOME/build-tools/36.0.0/zipalign"
           test -x "$AAPT"
           test -x "$APKSIGNER"
+          test -x "$ZIPALIGN"
 
           EXPECTED_VERSION_CODE="$(grep -m1 -oE 'versionCode[[:space:]]+[0-9]+' android/app/build.gradle | grep -oE '[0-9]+')"
           EXPECTED_VERSION_NAME="$(grep -m1 -oE "versionName[[:space:]]+'[^']+'" android/app/build.gradle | sed -E "s/versionName[[:space:]]+'//; s/'$//")"
@@ -115,6 +117,7 @@ jobs:
 
           mkdir -p verification-output
           cp "$APK" verification-output/Shopping-Lists-debug.apk
+          "$ZIPALIGN" -c -v 4 verification-output/Shopping-Lists-debug.apk
           unzip -tq verification-output/Shopping-Lists-debug.apk
 
           python3 - <<'PY'
@@ -139,9 +142,9 @@ jobs:
           printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
 
           "$APKSIGNER" verify --verbose --print-certs verification-output/Shopping-Lists-debug.apk 2>&1 | tee verification-output/signature-report.txt
-          # The Android Gradle Plugin may choose the highest enabled compatible
-          # signature scheme. The device minimum is Android 11, so V3 is valid.
-          grep -Eiq "Verified using v3 scheme.*: true" verification-output/signature-report.txt
+          # Keep the same V2 Debug signing mode used by the previously published APK.
+          grep -Eiq "Verified using v2 scheme.*: true" verification-output/signature-report.txt
+          grep -Fq "Signer #1 certificate SHA-256 digest: 92cc0214682fe7b5c8310703f9dc22143264baf383a95acd8775867db77949a4" verification-output/signature-report.txt
           sha256sum verification-output/Shopping-Lists-debug.apk > verification-output/sha256.txt
 
           python3 - <<'PY'
@@ -207,7 +210,7 @@ jobs:
             Opção 2: baixe o APK diretamente, se preferir.
 
             Requisitos: Android 11 ou mais recente e processador 64 bits (arm64-v8a).
-            A compilação verifica integridade ZIP, checksum SHA-256 e assinatura APK V3.
+            A compilação verifica alinhamento ZIP, integridade do APK, checksum SHA-256 e assinatura APK V2 com o certificado Debug preservado.
             Este APK usa o pacote br.com.shoppinglist.debug e não atualiza uma instalação Release br.com.shoppinglist.
           files: |
             verification-output/Shopping-Lists-debug.apk
