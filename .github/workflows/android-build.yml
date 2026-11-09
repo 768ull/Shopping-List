@@ -101,6 +101,8 @@ jobs:
               raise SystemExit("version_code precisa ser um inteiro positivo.")
           if not re.fullmatch(r"[0-9A-Za-z._+-]{1,40}", name):
               raise SystemExit("version_name inválido. Use somente letras, números, ponto, _, + e -.")
+          if re.search(r"debug", name, re.IGNORECASE):
+              raise SystemExit("A versão oficial não pode conter a marcação debug.")
 
           manifest_path = pathlib.Path(os.environ["GITHUB_WORKSPACE"]) / "update.json"
           if not manifest_path.is_file():
@@ -216,6 +218,12 @@ jobs:
           printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${VERSION_CODE}' versionName='${VERSION_NAME}'"
           printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
           printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
+
+          MANIFEST_TREE="$("$AAPT" dump xmltree release-files/Shopping-Lists.apk AndroidManifest.xml)"
+          if printf '%s\n' "$MANIFEST_TREE" | grep -Eiq 'android:debuggable.*=(true|0xffffffff)'; then
+            echo "::error::O APK oficial está marcado como debuggable."
+            exit 1
+          fi
           if [[ ! -s "$APK.idsig" ]]; then
             echo "::error::A assinatura V4 não foi gerada. Verifique a configuração Android Gradle do módulo."
             exit 1
@@ -268,6 +276,7 @@ jobs:
           fail_on_unmatched_files: true
 
       - name: Remover a prévia Debug depois da publicação oficial
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
