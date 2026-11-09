@@ -66,14 +66,14 @@ O workflow decodifica o keystore no diretório temporário `android/signing/`, c
 
 1. Configure os quatro Secrets acima.
 2. Abra **Actions → Build Shopping Lists APK → Run workflow**.
-3. Para a primeira publicação oficial desta base, use `version_code=10` e `version_name=1.0.9`, que correspondem à versão-base atual do projeto. O workflow Release exige que os quatro Secrets de assinatura estejam configurados.
+3. Para a primeira publicação oficial desta base, use `version_code=11` e `version_name=1.0.10`, que correspondem à versão-base atual do projeto. O workflow Release exige que os quatro Secrets de assinatura estejam configurados.
 4. O workflow compila, valida o APK, publica o Release e atualiza `update.json`.
 
 O pipeline confirma V1/V2/V3 com `apksigner` e exige o arquivo `.idsig` para V4.
 
 ## Publicar atualizações futuras
 
-Depois da publicação `version_code=10` / `version_name=1.0.9`, aumente o código a cada versão: 11, 12 e assim por diante. Os próximos nomes podem ser 1.0.10, 1.0.11 etc. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `Shopping-Lists.apk`, `Shopping-Lists.apk.idsig`, SHA-256 e atualiza o manifesto.
+Depois da publicação `version_code=11` / `version_name=1.0.10`, aumente o código a cada versão: 12, 13 e assim por diante. Os próximos nomes podem ser 1.0.11, 1.0.12 etc. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `Shopping-Lists.apk`, `Shopping-Lists.apk.idsig`, SHA-256 e atualiza o manifesto.
 
 O aplicativo consulta:
 `https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
