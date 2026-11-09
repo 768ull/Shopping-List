@@ -584,6 +584,7 @@ public class MainActivity extends android.app.Activity {
         Runnable refreshGrid = () -> {
             grid.removeAllViews();
             if (showingStickers[0]) {
+                grid.setColumnCount(4);
                 search.setVisibility(View.GONE);
                 resultInfo.setText("Adesivos próprios por categoria. Não dependem de fontes de emoji.");
                 for (StickerCatalog.Sticker custom : StickerCatalog.all()) {
@@ -613,6 +614,7 @@ public class MainActivity extends android.app.Activity {
                     });
                 }
             } else {
+                grid.setColumnCount(5);
                 search.setVisibility(View.VISIBLE);
                 String query = search.getText() == null ? "" : search.getText().toString().trim();
                 List<EmojiCatalog.EmojiEntry> matches = query.isEmpty()
