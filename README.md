@@ -74,7 +74,7 @@ O manifesto público é:
 
 ## Estado de validação
 
-A compilação Debug `1.0.11` só será considerada aprovada depois de confirmar a assinatura V2, o certificado preservado e o alinhamento do APK. A Release oficial (`br.com.shoppinglist`) ainda depende de uma chave privada de distribuição configurada nos quatro Secrets e não foi publicada.
+A compilação Debug `1.0.11` foi aprovada: assinatura V2 válida, certificado `92cc0214682fe7b5c8310703f9dc22143264baf383a95acd8775867db77949a4` preservado e alinhamento do APK aprovado. A Release oficial (`br.com.shoppinglist`) ainda depende de uma chave privada de distribuição configurada nos quatro Secrets e não foi publicada.
 
 
 ## Assinatura das compilações e atualização
@@ -83,9 +83,9 @@ O APK produzido por `android-verify.yml` é somente de teste e usa o identificad
 
 A versão-base do projeto agora é `versionCode 12` / `1.0.11`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping Lists APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões.
 
-**Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública, portanto não é possível reconstruir a chave privada nem assinar um APK de atualização compatível com aquela instalação. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
+**Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública. O certificado SHA-256 do primeiro APK foi `3820DF20A66A84377D2C4381CD35CFD89B94E326375676A192A02F871C322207`; os APKs Debug 1.0.9, 1.0.10 e 1.0.11 usam `92CC0214682FE7B5C8310703F9DC22143264BAF383A95ACD8775867DB77949A4`. Se a primeira compilação ainda estiver instalada, o Android não aceitará a atualização por cima devido à diferença de assinatura. O app antigo não tem exportação de backup JSON; antes de desinstalá-lo, salve suas listas em PDF ou imagens. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
 
-O APK Debug `1.0.11` (`versionCode 12`) será publicado após a validação da assinatura V2 e do alinhamento do APK. O ZIP de artefatos das Actions serve apenas para inspeção; não extraia e instale a partir dele no celular.
+O APK Debug `1.0.11` (`versionCode 12`) está publicado com assinatura V2 e certificado preservado: [baixar APK](https://github.com/768ull/Shopping-List/releases/download/debug-test/Shopping-Lists-debug.apk) ou [baixar ZIP para extração](https://github.com/768ull/Shopping-List/releases/download/debug-test/Shopping-Lists-debug-download.zip). O ZIP de artefatos das Actions serve apenas para inspeção; não o use como pacote de instalação. Para o download alternativo, use o ZIP de Release indicado acima.
 
 ## Baixar o aplicativo pelo GitHub Mobile
 
