@@ -70,7 +70,7 @@ jobs:
           fi
 
           RELATIVE_MODULE="${APP_DIR#"$PROJECT_DIR"/}"
-          APP_MODULE_PATH=":${RELATIVE_MODULE//\//:}"
+          APP_MODULE_PATH=":$(printf '%s' "$RELATIVE_MODULE" | tr '/' ':')"
           {
             echo "PROJECT_DIR=$PROJECT_DIR"
             echo "APP_DIR=$APP_DIR"
@@ -207,7 +207,6 @@ jobs:
       - name: Compilar, verificar assinatura e gerar checksum
         shell: bash
         env:
-          CI_KEYSTORE_PATH: ${{ env.CI_KEYSTORE_PATH }}
           CI_KEYSTORE_PASSWORD: ${{ secrets.SHOPPING_KEYSTORE_PASSWORD }}
           CI_KEY_ALIAS: ${{ secrets.SHOPPING_KEY_ALIAS }}
           CI_KEY_PASSWORD: ${{ secrets.SHOPPING_KEY_PASSWORD }}
@@ -226,7 +225,7 @@ jobs:
           mapfile -t APK_FILES < <(find "$APP_DIR/build/outputs/apk" -type f -path '*/release/*.apk' ! -name '*-unsigned.apk' ! -name '*androidTest*' 2>/dev/null | sort)
           if [[ "${#APK_FILES[@]}" -ne 1 ]]; then
             echo "::error::Esperava exatamente um APK Release, encontrei ${#APK_FILES[@]}."
-            find "$APP_DIR/build/outputs" -type f -maxdepth 7 -print 2>/dev/null || true
+            find "$APP_DIR/build/outputs" -maxdepth 7 -type f -print 2>/dev/null || true
             exit 1
           fi
 
@@ -266,15 +265,21 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publicar Release com APK e assinatura V4
-        uses: softprops/action-gh-release@v2
+      - name: Preparar notas da versão
+        shell: bash
         env:
           CHANGELOG: ${{ inputs.changelog }}
+        run: |
+          set -euo pipefail
+          printf '%s\\n' "$CHANGELOG" > release-files/CHANGELOG.md
+
+      - name: Publicar Release com APK e assinatura V4
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ inputs.version_name }}
           target_commitish: main
           name: Shopping List v${{ inputs.version_name }}
-          body: ${{ env.CHANGELOG }}
+          body_path: release-files/CHANGELOG.md
           files: |
             release-files/ShoppingList.apk
             release-files/ShoppingList.apk.idsig
