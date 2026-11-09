@@ -177,7 +177,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+          sdkmanager "platforms;android-37" "build-tools;36.0.0"
 
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -209,13 +209,19 @@ jobs:
             exit 1
           fi
 
-          APK="${APK_FILES[0]}"
+          APK="\${APK_FILES[0]}"
           test -s "$APK"
           APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           test -x "$APKSIGNER"
+          test -x "$AAPT"
 
           mkdir -p release-files
           cp "$APK" release-files/ShoppingList.apk
+          unzip -tq release-files/ShoppingList.apk
+          BADGING="$("$AAPT" dump badging release-files/ShoppingList.apk)"
+          printf '%s\\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${VERSION_CODE}' versionName='${VERSION_NAME}'"
+          printf '%s\\n' "$BADGING" | grep -F "sdkVersion:'30'"
           if [[ ! -s "$APK.idsig" ]]; then
             echo "::error::A assinatura V4 não foi gerada. Verifique a configuração Android Gradle do módulo."
             exit 1
