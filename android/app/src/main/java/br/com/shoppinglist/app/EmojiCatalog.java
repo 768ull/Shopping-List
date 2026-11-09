@@ -24,7 +24,7 @@ public final class EmojiCatalog {
     public static final String UNICODE_VERSION = "18.0";
     // Bump this when the curated catalog changes so old full catalogs are ignored.
     public static final int CATALOG_SCHEMA = 3;
-    public static final int TOTAL_EMOJI_COUNT = 441;
+    public static final int TOTAL_EMOJI_COUNT = 436;
     private static volatile List<EmojiEntry> cachedAll;
     private static volatile boolean loading;
     private static final Object LOAD_LOCK = new Object();
