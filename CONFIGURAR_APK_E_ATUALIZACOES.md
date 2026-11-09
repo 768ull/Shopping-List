@@ -24,7 +24,7 @@ O `android/app/build.gradle` já ativa as assinaturas V1, V2, V3 e V4. A V4 gera
 
 O ZIP original continha `signing/shopping-list-release.jks` e `signing/signing.properties`. Como o repositório é público, esses arquivos foram expostos em commits anteriores. O keystore foi removido da árvore atual, mas isso não apaga as versões antigas do arquivo no histórico GitHub.
 
-**Não use a chave antiga como chave de distribuição segura.** Se já existir uma instalação do Shopping List assinada com ela, uma nova chave não será aceita como atualização normal. Nesse caso, é preciso preservar a identidade antiga ou planejar uma rotação compatível antes de distribuir o novo APK. O repositório possui a pré-release de teste `debug-test` com o APK `1.0.8`; ainda não possui uma Release oficial de produção. Isso não confirma se você instalou alguma compilação local.
+**Não use a chave antiga como chave de distribuição segura.** Se já existir uma instalação do Shopping List assinada com ela, uma nova chave não será aceita como atualização normal. Nesse caso, é preciso preservar a identidade antiga ou planejar uma rotação compatível antes de distribuir o novo APK. O repositório possui a pré-release de teste `debug-test` com o APK Debug `1.0.9` (`versionCode 10`); ainda não possui uma Release oficial de produção. Isso não confirma se você instalou alguma compilação local.
 
 ### Criar e guardar uma chave de distribuição
 
