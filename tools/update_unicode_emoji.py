@@ -17,6 +17,17 @@ CATALOG_PATH = EMOJI_DIR / "emoji_catalog_pt.tsv"
 MANIFEST_PATH = EMOJI_DIR / "emoji_catalog_manifest.json"
 
 UNICODE_SOURCE = "https://www.unicode.org/Public/emoji/latest/emoji-test.txt"
+# The app is a shopping list: keep emoji that depict physical goods, not the entire
+# Unicode communication palette.  This subgroup allowlist is refreshed from the
+# official Unicode test file so new product emojis can appear automatically.
+PRODUCT_SUBGROUPS = {
+    "Food & Drink": {"food-fruit", "food-vegetable", "food-prepared", "food-asian",
+                     "food-marine", "food-sweet", "drink", "dishware"},
+    "Objects": {"clothing", "sound", "music", "musical-instrument", "phone",
+                "computer", "light & video", "book-paper", "writing", "office",
+                "lock", "tool", "medical", "household", "other-object"},
+}
+
 CLDR_SOURCES = (
     "https://raw.githubusercontent.com/unicode-org/cldr/main/common/annotations/pt.xml",
     "https://raw.githubusercontent.com/unicode-org/cldr/main/common/annotationsDerived/pt.xml",
@@ -61,6 +72,102 @@ def read_portuguese_cldr() -> dict[str, str]:
     return names
 
 
+def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
+    normalized = name.casefold()
+    # Never show status/action symbols or the shopping-bag glyph that was
+    # previously mistaken for the product itself.
+    excluded = ("shopping bags", "clinking", "pouring liquid", "with slash",
+                "muted speaker", "speaker low volume", "speaker medium volume",
+                "speaker high volume", "with arrow", "cooking", "dashing away")
+    if any(term in normalized for term in excluded):
+        return False
+
+    # Food, drinks and tableware are all purchasable groceries/household goods.
+    if group == "Food & Drink":
+        return subgroup in PRODUCT_SUBGROUPS[group]
+
+    # Keep seafood, flowers and plants, but not ordinary wild/pet animals.
+    if group == "Animals & Nature":
+        if subgroup == "animal-marine":
+            return any(term in normalized for term in
+                       ("fish", "shrimp", "crab", "lobster", "squid", "oyster"))
+        if subgroup == "plant-flower":
+            return any(term in normalized for term in
+                       ("bouquet", "rose", "tulip", "hibiscus", "sunflower",
+                        "blossom", "cherry blossom", "flower"))
+        if subgroup == "plant-other":
+            return any(term in normalized for term in
+                       ("seedling", "potted plant", "evergreen tree", "deciduous tree",
+                        "palm tree", "cactus", "sheaf of rice", "herb", "mushroom"))
+        return False
+
+    # Transport icons are limited to actual vehicles/parts, not transit services,
+    # emergency vehicles, signs or travel actions.
+    if group == "Travel & Places":
+        if subgroup == "transport-ground":
+            return any(term in normalized for term in
+                       ("automobile", "motorcycle", "motor scooter", "scooter",
+                        "bicycle", "skateboard", "roller skate", "kick scooter",
+                        "wheel", "pickup truck", "fuel pump", "wheelchair"))
+        return normalized == "droplet"
+
+    # Activity symbols are included only when the glyph is itself a physical toy,
+    # game component or sporting good.
+    if group == "Activities":
+        if subgroup == "sport":
+            return any(term in normalized for term in
+                       ("ball", "racket", "bat", "glove", "skateboard",
+                        "fishing pole", "yo-yo", "kite", "goal net"))
+        if subgroup == "game":
+            return any(term in normalized for term in
+                       ("game die", "puzzle piece", "joystick", "chess pawn",
+                        "playing cards", "mahjong"))
+        if subgroup == "event":
+            return any(term in normalized for term in
+                       ("jack-o-lantern", "christmas tree", "fireworks", "sparkler",
+                        "balloon", "ribbon", "wrapped gift", "red envelope",
+                        "wind chime", "japanese dolls", "carp streamer", "pine decoration"))
+        if subgroup == "arts & crafts":
+            return any(term in normalized for term in
+                       ("framed picture", "artist palette", "thread", "sewing needle", "yarn"))
+        return False
+
+    # A bone is retained as a recognizable dog-chew/pet-shop product. Other
+    # body-part emoji (including brain) are not products.
+    if group == "People & Body":
+        return normalized == "bone"
+
+    if group == "Objects":
+        if subgroup not in PRODUCT_SUBGROUPS[group]:
+            return False
+        # Object subgroups still contain a few pictograms that express a state,
+        # rather than a thing that can be put in a shopping basket.
+        if subgroup == "phone":
+            return normalized in {"mobile phone", "telephone", "telephone receiver",
+                                  "pager", "fax machine"}
+        if subgroup == "sound":
+            return any(term in normalized for term in
+                       ("speaker", "loudspeaker", "megaphone", "postal horn", "bell"))
+        if subgroup == "music":
+            return any(term in normalized for term in
+                       ("microphone", "headphone", "radio", "musical keyboard"))
+        if subgroup == "lock":
+            return any(term in normalized for term in ("lock", "key"))
+        if subgroup == "light & video":
+            return any(term in normalized for term in
+                       ("camera", "television", "light bulb", "flashlight", "lantern",
+                        "candle", "film projector", "video camera", "lamp"))
+        if subgroup == "tool":
+            return not any(term in normalized for term in
+                           ("dagger", "sword", "bomb", "boomerang", "bow and arrow", "shield"))
+        if subgroup == "other-object":
+            return not any(term in normalized for term in
+                           ("input symbol", "envelope with arrow", "ballot", "chart"))
+        return True
+
+    return False
+
+
 def main() -> None:
     raw = download(UNICODE_SOURCE).decode("utf-8")
     version_match = re.search(r"^# Version:\s*([0-9.]+)", raw, re.MULTILINE)
@@ -74,8 +181,16 @@ def main() -> None:
     cldr_names = read_portuguese_cldr()
     rows: list[tuple[str, str]] = []
     seen: set[str] = set()
+    current_group = ""
+    current_subgroup = ""
 
     for line in raw.splitlines():
+        if line.startswith("# group:"):
+            current_group = line.split(":", 1)[1].strip()
+            continue
+        if line.startswith("# subgroup:"):
+            current_subgroup = line.split(":", 1)[1].strip()
+            continue
         if not line or line.startswith("#") or ";" not in line or "#" not in line:
             continue
         data, comment = line.split("#", 1)
@@ -105,6 +220,8 @@ def main() -> None:
     manifest = {
         "unicodeVersion": version,
         "emojiCount": len(rows),
+        "catalogSchema": 1,
+        "catalogType": "shopping-products",
         "sha256": digest,
         "source": UNICODE_SOURCE,
         "sourceDate": source_date,
