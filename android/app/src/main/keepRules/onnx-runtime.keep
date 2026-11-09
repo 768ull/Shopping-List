@@ -1,3 +1,7 @@
 # ONNX Runtime uses JNI and reflective access to its Android API classes.
 # Required by the official ONNX Runtime Android guidance when R8 is enabled.
 -keep class ai.onnxruntime.** { *; }
+
+# SLF4J's Android runtime intentionally has no StaticLoggerBinder implementation.
+# Its logger factory falls back to a no-op binding when this optional class is absent.
+-dontwarn org.slf4j.impl.StaticLoggerBinder
