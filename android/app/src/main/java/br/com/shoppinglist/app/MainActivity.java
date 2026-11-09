@@ -329,7 +329,7 @@ public class MainActivity extends android.app.Activity {
         emojiControls.setGravity(Gravity.CENTER_VERTICAL);
         emojiControls.setPadding(dp(3), 0, dp(3), dp(8));
         Switch autoSwitch = new Switch(this);
-        autoSwitch.setText("Emojis automáticos");
+        autoSwitch.setText("Emojis e adesivos automáticos");
         autoSwitch.setTextColor(INK);
         autoSwitch.setTextSize(13);
         autoSwitch.setChecked(autoEmoji);
@@ -411,7 +411,7 @@ public class MainActivity extends android.app.Activity {
             showEditor(currentListId, true);
         });
 
-        TextView note = label("Dica: cada produto pode ter seu próprio adesivo de emoji.", 11, MUTED, false);
+        TextView note = label("Dica: toque no adesivo para escolher entre emojis e adesivos de categoria.", 11, MUTED, false);
         note.setGravity(Gravity.CENTER);
         note.setPadding(0, dp(12), 0, dp(4));
         notebook.addView(note);
