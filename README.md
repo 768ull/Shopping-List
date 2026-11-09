@@ -2,23 +2,27 @@
 
 Aplicativo Android de lista de compras, com compilação automatizada pelo GitHub Actions e mecanismo de consulta de atualizações pelo manifesto `update.json`.
 
-## Onde estão os arquivos
+## Estrutura atual
 
 | Caminho | Finalidade |
 |---|---|
-| `Shopping_List_Project_com_Atualizador.zip` | Pacote atual do projeto-fonte Android. É extraído pelo workflow antes da compilação. |
-| `.github/workflows/android-build.yml` | Pipeline de compilação, assinatura, validação e publicação do APK. |
+| `Shopping_List_Project_com_Atualizador.zip` | Projeto-fonte Android. O workflow testa o ZIP, extrai o projeto e localiza o módulo `app`. |
+| `.github/workflows/android-build.yml` | Compilação, assinatura V1/V2/V3/V4, validação, artefato e publicação do APK. |
 | `update.json` | Manifesto consultado pelo aplicativo para detectar uma versão mais recente. |
-| `CONFIGURAR_APK_E_ATUALIZACOES.md` | Instruções para configurar a chave privada e publicar versões. |
-| `PROJECT_STRUCTURE.md` | Mapa do repositório e fluxo de compilação. |
+| `CONFIGURAR_APK_E_ATUALIZACOES.md` | Configuração da chave privada e publicação de versões. |
+| `PROJECT_STRUCTURE.md` | Mapa da estrutura e do fluxo de compilação. |
 
 ## Compilar o APK
 
-1. Configure os quatro secrets de assinatura descritos em [CONFIGURAR_APK_E_ATUALIZACOES.md](CONFIGURAR_APK_E_ATUALIZACOES.md).
+1. Configure os quatro GitHub Actions Secrets descritos em [CONFIGURAR_APK_E_ATUALIZACOES.md](CONFIGURAR_APK_E_ATUALIZACOES.md).
 2. Abra **Actions → Build Shopping List APK → Run workflow**.
-3. Informe um `version_code` maior que o da versão publicada e um `version_name`.
-4. O workflow extrai o pacote-fonte, compila o módulo Android `app`, valida a assinatura e publica `ShoppingList.apk` no GitHub Release.
-5. O workflow atualiza `update.json` com versão, endereço do APK, SHA-256 e changelog.
+3. Na primeira publicação, use `version_code=1` e `version_name=1.0`, desde que `apkUrl` ainda esteja vazio em `update.json`.
+4. Nas versões seguintes, aumente o `version_code` a cada publicação.
+5. O workflow testa e extrai o ZIP, localiza o módulo Android, injeta a configuração de assinatura somente no diretório temporário, compila e verifica o APK.
+6. O APK, o arquivo de assinatura V4 (`.idsig`) e o SHA-256 são guardados como artefato e publicados no GitHub Release.
+7. Após a publicação, o workflow atualiza `update.json`.
+
+O pipeline usa o Gradle Wrapper do projeto quando ele existe; caso contrário, utiliza Gradle 9.6.0.
 
 ## Atualizações do aplicativo
 
@@ -26,15 +30,23 @@ O endereço bruto do manifesto na branch principal é:
 
 `https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
 
-Cada atualização precisa usar a mesma chave privada de assinatura da instalação anterior e um `version_code` maior. Não troque nem perca o keystore de distribuição: o Android exige a continuidade da identidade de assinatura para atualizar o aplicativo sem desinstalá-lo.
+Cada atualização precisa usar a mesma chave privada da instalação anterior e um `version_code` maior. O Android exige continuidade da identidade de assinatura para atualizar uma instalação existente.
 
-## Segurança
+## Segurança da assinatura
 
-- Nunca coloque keystore, senhas ou arquivos `signing.properties` no repositório.
-- Como o repositório é público, qualquer chave de desenvolvimento incluída em um ZIP antigo deve ser considerada comprometida.
-- Use somente os GitHub Actions Secrets indicados no guia de configuração.
-- Não publique APKs de distribuição assinados com uma chave de teste.
+O ZIP enviado originalmente contém uma chave de desenvolvimento e credenciais dentro de `signing/`. Como o repositório é público, essa chave está exposta e não deve ser tratada como chave privada segura de distribuição.
 
-## Observação sobre a estrutura atual
+O workflow não usa automaticamente a chave exposta do ZIP. Ele exige estes quatro GitHub Actions Secrets:
 
-O código-fonte Android ainda está armazenado dentro do ZIP, não como módulos e pastas navegáveis na raiz. O workflow conhece esse caminho porque extrai o arquivo e valida `ShoppingListProject/app/build.gradle`. Para deixar cada arquivo-fonte individualmente visível no GitHub, será necessário extrair o ZIP e migrar a árvore do projeto para a raiz do repositório, preservando o conteúdo original e conferindo os caminhos reais antes de alterar o pipeline.
+- `SHOPPING_KEYSTORE_BASE64`: conteúdo Base64 do keystore.
+- `SHOPPING_KEYSTORE_PASSWORD`: senha do keystore.
+- `SHOPPING_KEY_ALIAS`: alias da chave.
+- `SHOPPING_KEY_PASSWORD`: senha da chave.
+
+**Importante:** antes de substituir a chave, confirme se algum APK já foi distribuído ou instalado com a chave antiga. Uma nova chave não atualiza diretamente instalações assinadas com um certificado diferente. Se já houver instalações, é necessário preservar a identidade anterior ou planejar uma rotação de chave compatível; não troque o keystore às cegas.
+
+Nunca coloque um keystore de distribuição, senhas ou `signing.properties` no repositório.
+
+## Limitação conhecida
+
+O código-fonte continua armazenado no ZIP. O workflow agora localiza o diretório real do módulo, mas a migração para arquivos Android individuais na raiz ainda exige abrir e revisar o conteúdo do arquivo compactado. A ferramenta de integração disponível nesta revisão não conseguiu fornecer os bytes do ZIP; portanto, não foi possível auditar as telas, dependências, permissões, lógica do atualizador nem executar uma compilação real.
