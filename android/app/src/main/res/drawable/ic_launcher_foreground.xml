@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Clipboard: kept inside the Android adaptive-icon safe zone. -->
+    <path
+        android:fillColor="#FFF9E8"
+        android:strokeColor="#A56A32"
+        android:strokeWidth="2"
+        android:strokeLineJoin="round"
+        android:pathData="M30,27 Q30,23 34,23 L66,23 Q70,23 70,27 L74,69 Q74,73 70,73 L34,73 Q30,73 30,69 Z" />
+    <path android:fillColor="#D8A76E" android:pathData="M39,22 Q39,17 43,17 Q47,17 47,22 L47,27 L39,27 Z" />
+    <path android:fillColor="#D8A76E" android:pathData="M53,22 Q53,17 57,17 Q61,17 61,22 L61,27 L53,27 Z" />
+    <path android:fillColor="#E7C18F" android:pathData="M39,21 Q39,16 43,16 Q47,16 47,21 L47,24 L39,24 Z" />
+    <path android:fillColor="#E7C18F" android:pathData="M53,21 Q53,16 57,16 Q61,16 61,21 L61,24 L53,24 Z" />
+
+    <!-- Notebook rules and margin. -->
+    <path android:fillColor="#00000000" android:strokeColor="#E98C82" android:strokeWidth="1.4" android:pathData="M38,30 L38,69" />
+    <path android:fillColor="#00000000" android:strokeColor="#9BC7E8" android:strokeWidth="1.2" android:pathData="M34,39 L68,39 M34,51 L69,51 M35,63 L70,63" />
+
+    <!-- Green checked list items. -->
+    <path android:fillColor="#39B54A" android:pathData="M41,34 L49,34 Q51,34 51,36 L51,44 Q51,46 49,46 L41,46 Q39,46 39,44 L39,36 Q39,34 41,34 Z" />
+    <path android:fillColor="#39B54A" android:pathData="M41,48 L49,48 Q51,48 51,50 L51,58 Q51,60 49,60 L41,60 Q39,60 39,58 L39,50 Q39,48 41,48 Z" />
+    <path android:fillColor="#39B54A" android:pathData="M41,62 L49,62 Q51,62 51,64 L51,70 L41,70 Q39,70 39,68 L39,64 Q39,62 41,62 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M41,39 L43,41 L47,37 L49,39 L43,45 L39,41 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M41,53 L43,55 L47,51 L49,53 L43,59 L39,55 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M41,66 L43,68 L47,64 L49,66 L43,72 L39,68 Z" />
+
+    <!-- Apple and leaf. -->
+    <path android:fillColor="#E53935" android:strokeColor="#B71C1C" android:strokeWidth="1"
+        android:pathData="M60,37 C55,32 49,36 50,42 C51,49 56,52 61,50 C66,53 71,49 72,42 C73,36 66,33 61,37 C61,34 62,32 64,31 C61,30 59,33 60,37 Z" />
+    <path android:fillColor="#4CAF50" android:pathData="M60,34 C59,29 63,27 68,28 C67,33 64,35 60,34 Z" />
+
+    <!-- Banana. -->
+    <path android:fillColor="#FFD54F" android:strokeColor="#C68A1A" android:strokeWidth="1"
+        android:pathData="M55,56 C60,62 68,63 73,57 C73,65 66,69 59,66 C55,64 52,60 51,57 Z" />
+    <path android:fillColor="#8D5B22" android:pathData="M51,56 L54,55 L55,58 L52,59 Z" />
+    <path android:fillColor="#8D5B22" android:pathData="M72,56 L75,54 L76,57 L73,59 Z" />
+
+    <!-- Grocery basket in the foreground. -->
+    <path android:fillColor="#FFB300" android:strokeColor="#A96500" android:strokeWidth="1.5"
+        android:pathData="M55,66 L83,66 Q85,66 84,69 L80,84 Q79,87 76,87 L60,87 Q57,87 56,84 L52,69 Q51,66 55,66 Z" />
+    <path android:fillColor="#00000000" android:strokeColor="#6D4930" android:strokeWidth="3.4"
+        android:strokeLineCap="round" android:pathData="M59,67 Q58,55 68,55 Q78,55 77,67" />
+    <path android:fillColor="#F6A000" android:pathData="M55,70 L82,70 L79,83 Q79,85 76,85 L61,85 Q59,85 59,83 Z" />
+    <path android:fillColor="#C77700" android:pathData="M62,72 L65,72 L66,83 L63,83 Z M70,72 L73,72 L73,83 L70,83 Z M77,72 L79,72 L77,82 L75,82 Z" />
+    <path android:fillColor="#FFE082" android:pathData="M55,68 L82,68 L82,71 L56,71 Z" />
+
+    <!-- Small produce peeking out of the basket. -->
+    <path android:fillColor="#4CAF50" android:pathData="M74,64 C70,59 73,55 77,55 C78,59 77,62 74,64 Z" />
+    <path android:fillColor="#E53935" android:pathData="M77,65 C74,61 77,58 81,60 C84,63 81,67 77,67 Z" />
+    <path android:fillColor="#4CAF50" android:pathData="M77,60 L77,57 L79,59 L81,57 L81,60 Z" />
+</vector>
