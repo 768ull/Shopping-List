@@ -81,13 +81,13 @@ A versão-base do projeto agora é `versionCode 8` / `1.0.6`. A distribuição a
 
 **Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública, portanto não é possível reconstruir a chave privada nem assinar um APK de atualização compatível com aquela instalação. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
 
-O APK Debug `1.0.7` está publicado como arquivo direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test). Baixe `ShoppingList-debug.apk` diretamente em **Assets**. O ZIP de artefatos das Actions serve apenas para inspeção; não extraia e instale a partir dele no celular.
+O APK Debug `1.0.7` está publicado como arquivo direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test). Baixe `Shopping-Lists-debug.apk` diretamente em **Assets**. O ZIP de artefatos das Actions serve apenas para inspeção; não extraia e instale a partir dele no celular.
 
 ## Baixar o aplicativo pelo GitHub Mobile
 
-As versões instaláveis do Shopping Lists são publicadas na área **Releases** deste repositório. No aplicativo oficial do GitHub para Android, abra este repositório, entre em **Releases**, escolha a versão desejada e toque no arquivo **ShoppingList.apk** em **Assets**. Não use **Code → Download ZIP** para instalar: esse ZIP contém o código-fonte, não o aplicativo.
+As versões instaláveis do Shopping Lists são publicadas na área **Releases** deste repositório. No aplicativo oficial do GitHub para Android, abra este repositório, entre em **Releases**, escolha a versão desejada e toque no arquivo **Shopping-Lists.apk** em **Assets**. Não use **Code → Download ZIP** para instalar: esse ZIP contém o código-fonte, não o aplicativo.
 
-Para o APK de teste Debug, abra a release **debug-test** e toque diretamente em **ShoppingList-debug.apk** em **Assets**. Evite baixar o ZIP de artefatos das Actions no celular: o download grande pode chegar truncado e o Android mostra "Ocorreu um problema ao analisar o pacote" ao instalar o APK extraído.
+Para o APK de teste Debug, abra a release **debug-test** e toque diretamente em **Shopping-Lists-debug.apk** em **Assets**. Evite baixar o ZIP de artefatos das Actions no celular: o download grande pode chegar truncado e o Android mostra "Ocorreu um problema ao analisar o pacote" ao instalar o APK extraído.
 
 - [Ver todas as versões publicadas (Releases)](https://github.com/768ull/Shopping-List/releases)
 - [Baixar a versão mais recente](https://github.com/768ull/Shopping-List/releases/latest)
