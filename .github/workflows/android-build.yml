@@ -32,6 +32,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Preservar histórico e impedir sobrescrita de versões
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_NAME: ${{ inputs.version_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION_NAME}"
+          if gh release view "$TAG" --json tagName >/dev/null 2>&1; then
+            echo "::error::A versão $TAG já existe no menu Releases. Use um novo version_name para criar outra entrada sem sobrescrever o histórico."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::A tag $TAG já existe. As versões publicadas não podem ser reutilizadas."
+            exit 1
+          fi
+
       - name: Localizar projeto Android
         shell: bash
         run: |
@@ -272,19 +289,8 @@ jobs:
             release-files/Shopping-Lists.apk
             release-files/Shopping-Lists.apk.idsig
             release-files/sha256.txt
-          overwrite_files: true
+          overwrite_files: false
           fail_on_unmatched_files: true
-
-      - name: Remover a prévia Debug depois da publicação oficial
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if gh release view debug-test >/dev/null 2>&1; then
-            gh release delete debug-test --yes --cleanup-tag
-          fi
 
       - name: Atualizar manifesto de atualização
         env:
