@@ -5,6 +5,8 @@ on:
     paths:
       - "android/**"
       - ".github/workflows/android-verify.yml"
+  schedule:
+    - cron: "17 4 */5 * *"
   pull_request:
     paths:
       - "android/**"
@@ -37,6 +39,29 @@ jobs:
           set -euo pipefail
           sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
 
+      - name: Restore persistent Debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: shopping-list-debug-keystore-v1
+
+      - name: Ensure persistent Debug signing key exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          if [[ ! -s "$HOME/.android/debug.keystore" ]]; then
+            keytool -genkeypair -v \\
+              -keystore "$HOME/.android/debug.keystore" \\
+              -storepass android \\
+              -alias androiddebugkey \\
+              -keypass android \\
+              -dname "CN=Android Debug,O=Android,C=US" \\
+              -keyalg RSA -keysize 2048 -validity 10000
+          fi
+          keytool -list -keystore "$HOME/.android/debug.keystore" \\
+            -storepass android -alias androiddebugkey >/dev/null
+
       - name: Configure Gradle 9.6.0
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -54,10 +79,10 @@ jobs:
           cp "$APK" verification-output/ShoppingList-debug.apk
           sha256sum verification-output/ShoppingList-debug.apk > verification-output/sha256.txt
 
-      - name: Upload verified Debug APK
+      - name: Upload verified Debug test APK (not for release updates)
         uses: actions/upload-artifact@v4
         with:
-          name: ShoppingList-Debug-APK
+          name: ShoppingList-DEBUG-TEST-ONLY
           path: verification-output/*
           if-no-files-found: error
           retention-days: 14
