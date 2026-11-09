@@ -15,6 +15,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: shopping-lists-debug-build
+  cancel-in-progress: false
+
 jobs:
   debug-build:
     runs-on: ubuntu-latest
@@ -81,6 +85,21 @@ jobs:
           mkdir -p verification-output
           cp "$APK" verification-output/ShoppingList-debug.apk
           unzip -tq verification-output/ShoppingList-debug.apk
+
+          python3 - <<'PY'
+          from zipfile import ZipFile, ZIP_STORED
+          apk = "verification-output/ShoppingList-debug.apk"
+          with ZipFile(apk) as archive:
+              broken = archive.testzip()
+              if broken:
+                  raise SystemExit(f"APK corrompido: {broken}")
+              native = [item for item in archive.infolist() if item.filename.startswith("lib/") and item.filename.endswith(".so")]
+              if not native:
+                  raise SystemExit("APK não contém bibliotecas nativas.")
+              stored = [item.filename for item in native if item.compress_type == ZIP_STORED]
+              if stored:
+                  raise SystemExit("Bibliotecas nativas continuam sem compressão: " + ", ".join(stored[:5]))
+          PY
 
           BADGING="$("$AAPT" dump badging verification-output/ShoppingList-debug.apk)"
           printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist.debug' versionCode='${EXPECTED_VERSION_CODE}' versionName='${EXPECTED_VERSION_NAME}-debug'"
