@@ -28,7 +28,7 @@ PRODUCT_SUBGROUPS = {
                      "food-marine", "food-sweet", "drink", "dishware"},
     "Objects": {"clothing", "sound", "music", "musical-instrument", "phone",
                 "computer", "light & video", "book-paper", "writing", "office", "mail",
-                "lock", "tool", "medical", "household", "time"},
+                "lock", "tool", "medical", "household"},
 }
 
 CLDR_SOURCES = (
@@ -138,6 +138,8 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
                         "wheel", "pickup truck", "fuel pump", "wheelchair"))
         if subgroup == "hotel":
             return normalized == "luggage"
+        if subgroup == "time":
+            return normalized == "watch"
         return normalized == "droplet"
 
     # Activity symbols are included only when the glyph is itself a physical toy,
@@ -188,8 +190,6 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
         if subgroup == "music":
             return any(term in normalized for term in
                        ("microphone", "headphone", "radio", "musical keyboard"))
-        if subgroup == "time":
-            return normalized == "watch"
         if subgroup == "mail":
             return normalized in {
                 "package", "envelope", "closed mailbox with raised flag",
