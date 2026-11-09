@@ -1,6 +1,9 @@
 package br.com.shoppinglist.app;
 
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.RectF;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -105,7 +108,7 @@ public final class ShoppingListRenderer {
         return result;
     }
 
-    public static void drawPage(Canvas canvas, String title, ExportPage page, int pageNumber, int pageCount) {
+    public static void drawPage(Context context, Canvas canvas, String title, ExportPage page, int pageNumber, int pageCount) {
         canvas.drawColor(Color.rgb(255, 254, 246));
 
         Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -177,8 +180,20 @@ public final class ShoppingListRenderer {
                     canvas.drawPath(path, tick);
                 }
                 String stickerValue = row.emoji == null ? "🛒" : row.emoji;
-                StickerCatalog.Sticker customSticker = StickerCatalog.fromValue(stickerValue);
-                if (customSticker != null) {
+                if (ProductAiEngine.isGenerated(stickerValue)) {
+                    Bitmap generated = BitmapFactory.decodeFile(
+                            ProductAiEngine.generatedFile(context, stickerValue).getAbsolutePath());
+                    if (generated != null) {
+                        Paint imagePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+                        canvas.drawBitmap(generated, null,
+                                new RectF(100, y - 17, 128, y + 8), imagePaint);
+                        generated.recycle();
+                    } else {
+                        canvas.drawText("🛒", 101, y + 2, emoji);
+                    }
+                } else {
+                    StickerCatalog.Sticker customSticker = StickerCatalog.fromValue(stickerValue);
+                    if (customSticker != null) {
                     Paint stickerBackground = new Paint(Paint.ANTI_ALIAS_FLAG);
                     stickerBackground.setColor(customSticker.background);
                     canvas.drawRoundRect(100, y - 17, 128, y + 8, 5, 5, stickerBackground);
@@ -188,8 +203,9 @@ public final class ShoppingListRenderer {
                     stickerText.setTextSize(18f);
                     stickerText.setTextAlign(Paint.Align.CENTER);
                     canvas.drawText(customSticker.badge, 114, y + 5f, stickerText);
-                } else {
-                    canvas.drawText(stickerValue, 101, y + 2, emoji);
+                    } else {
+                        canvas.drawText(stickerValue, 101, y + 2, emoji);
+                    }
                 }
             }
             canvas.drawText(row.text == null ? "" : row.text, 136, y, body);
@@ -198,11 +214,11 @@ public final class ShoppingListRenderer {
         }
     }
 
-    public static Bitmap renderImage(String title, ExportPage page, int pageNumber, int pageCount) {
+    public static Bitmap renderImage(Context context, String title, ExportPage page, int pageNumber, int pageCount) {
         Bitmap bitmap = Bitmap.createBitmap(IMAGE_WIDTH, IMAGE_HEIGHT, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         canvas.scale(IMAGE_WIDTH / (float) PAGE_WIDTH, IMAGE_HEIGHT / (float) PAGE_HEIGHT);
-        drawPage(canvas, title, page, pageNumber, pageCount);
+        drawPage(context, canvas, title, page, pageNumber, pageCount);
         return bitmap;
     }
 }
