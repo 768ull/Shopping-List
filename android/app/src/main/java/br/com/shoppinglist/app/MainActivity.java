@@ -527,7 +527,7 @@ public class MainActivity extends android.app.Activity {
         heading.setPadding(0, 0, 0, dp(4));
         outer.addView(heading);
 
-        int emojiCount = EmojiCatalog.all(this).size();
+        int emojiCount = EmojiCatalog.TOTAL_EMOJI_COUNT;
         TextView catalogInfo = label(
                 emojiCount + " emojis Unicode " + EmojiCatalog.UNICODE_VERSION
                         + " • pesquisa em português • offline",
@@ -581,6 +581,8 @@ public class MainActivity extends android.app.Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(300)));
 
         final boolean[] showingStickers = {false};
+        final boolean[] preloadRequested = {false};
+        final Runnable[] refreshGridRef = new Runnable[1];
         Runnable refreshGrid = () -> {
             grid.removeAllViews();
             if (showingStickers[0]) {
@@ -617,9 +619,23 @@ public class MainActivity extends android.app.Activity {
                 grid.setColumnCount(5);
                 search.setVisibility(View.VISIBLE);
                 String query = search.getText() == null ? "" : search.getText().toString().trim();
+                if (!query.isEmpty() && !EmojiCatalog.isLoaded()) {
+                    resultInfo.setText("Preparando a pesquisa de " + emojiCount + " emojis...");
+                    TextView loading = label("Carregando catálogo em segundo plano...", 13, MUTED, false);
+                    loading.setGravity(Gravity.CENTER);
+                    loading.setPadding(dp(10), dp(25), dp(10), dp(25));
+                    grid.addView(loading, new GridLayout.LayoutParams());
+                    if (!preloadRequested[0]) {
+                        preloadRequested[0] = true;
+                        EmojiCatalog.preload(this, () -> {
+                            if (dialog.isShowing() && !showingStickers[0]) refreshGridRef[0].run();
+                        });
+                    }
+                    return;
+                }
                 List<EmojiCatalog.EmojiEntry> matches = query.isEmpty()
                         ? EmojiCatalog.quick(this)
-                        : EmojiCatalog.search(this, query, 220);
+                        : EmojiCatalog.search(this, query, 80);
                 resultInfo.setText(query.isEmpty()
                         ? "Seleção rápida • " + emojiCount + " emojis disponíveis para pesquisa."
                         : matches.size() + " resultado(s) • pesquisando nomes em português.");
@@ -651,6 +667,7 @@ public class MainActivity extends android.app.Activity {
                 }
             }
         };
+        refreshGridRef[0] = refreshGrid;
 
         emojiTab.setOnClickListener(v -> {
             showingStickers[0] = false;
