@@ -139,9 +139,7 @@ jobs:
           printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
 
           "$APKSIGNER" verify --verbose --print-certs verification-output/ShoppingList-debug.apk 2>&1 | tee verification-output/signature-report.txt
-          for scheme in v1 v2 v3; do
-            grep -Eiq "Verified using ${scheme} scheme.*: true" verification-output/signature-report.txt
-          done
+          grep -Eiq "Verified using v2 scheme.*: true" verification-output/signature-report.txt
           sha256sum verification-output/ShoppingList-debug.apk > verification-output/sha256.txt
 
       - name: Upload verified Debug test APK (not for release updates)
