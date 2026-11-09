@@ -55,7 +55,7 @@ O workflow decodifica o keystore no diretório temporário `android/signing/`, c
 
 1. Configure os quatro Secrets acima.
 2. Abra **Actions → Build Shopping List APK → Run workflow**.
-3. Para a primeira publicação, use `version_code=1` e `version_name=1.0`, enquanto `apkUrl` estiver vazio no manifesto.
+3. Para a primeira publicação, use `version_code=2` e `version_name=1.0.1`; o manifesto inicial ainda não contém APK publicado.
 4. O workflow compila, valida o APK, publica o Release e atualiza `update.json`.
 
 O pipeline confirma V1/V2/V3 com `apksigner` e exige o arquivo `.idsig` para V4.
@@ -68,3 +68,11 @@ O aplicativo consulta:
 `https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
 
 O atualizador verifica HTTPS, SHA-256, identificador do pacote, versão e certificado de assinatura antes de abrir o instalador oficial do Android. A confirmação de instalação continua sendo feita pelo próprio Android.
+
+## Compilação Debug e assinatura persistente
+
+O workflow `Verify Shopping List Android` gera somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele não deve ser tratado como APK de distribuição. A chave Debug agora é guardada no cache do GitHub Actions e o workflow é executado periodicamente para manter esse cache ativo. Isso mantém as futuras compilações Debug com a mesma assinatura enquanto o cache existir.
+
+**Atenção para a instalação Debug feita antes dessa correção:** a primeira compilação Debug (run 42650212939) foi assinada com uma chave aleatória gerada no runner temporário do GitHub, que não foi armazenada. Essa chave privada não está dentro do APK e não pode ser reconstruída a partir do certificado. Portanto, um APK assinado com a nova chave persistente não consegue atualizar aquela instalação. Não existe uma alteração de Gradle ou do APK que contorne a verificação de assinatura do Android.
+
+As atualizações normais distribuídas aos usuários devem usar o workflow Release, o pacote `br.com.shoppinglist` e os quatro Secrets de assinatura privada. Nunca use artefatos Debug como atualizações de Release.
