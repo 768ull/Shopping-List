@@ -16,12 +16,12 @@ Aplicativo Android nativo de lista de compras, com visual amarelo e página de c
 
 - `compileSdk = 37` (Android 17).
 - `targetSdk = 37`.
-- `minSdk = 21` (Android 5.0).
+- `minSdk = 30` (Android 5.0).
 - Java + Views Android nativas, sem WebView ou Jetpack Compose.
 - Android Gradle Plugin 9.5.0, Gradle 9.6.0 e JDK 17.
 - Android SDK Platform 37.0 e Build Tools 36.0.0 no CI.
 
-O SDK 37 é usado para compilar e direcionar o aplicativo. `minSdk 21` define a versão mínima instalável.
+O SDK 37 é usado para compilar e direcionar o aplicativo. `minSdk 30` define a versão mínima instalável (Android 11).
 
 ## Assinatura APK V1/V2/V3/V4
 
