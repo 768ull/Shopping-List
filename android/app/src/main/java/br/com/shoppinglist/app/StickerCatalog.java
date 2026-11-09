@@ -73,12 +73,12 @@ public final class StickerCatalog {
         if (s.isEmpty()) return ITEMS[0].value();
         if (hasAny(s, "detergente", "desinfetante", "agua sanitaria", "agua sanitaria", "agua sanitaria",
                 "limpador", "desengordurante", "amaciante", "sabao em po", "sabao liquido",
-                "alvejante", "amaciante", "lustra moveis", "limpa vidro", "cera", "polidor", "vassoura", "rodo", "balde", "pano de chao", "pano de limpeza", "saco de lixo", "inseticida", "luva de limpeza", "escova de limpeza"))
+                "alvejante", "amaciante", "lustra moveis", "limpa vidro", "cera", "polidor", "vassoura", "rodo", "balde", "pano de chao", "pano de limpeza", "saco de lixo", "inseticida", "luva de limpeza", "escova de limpeza", "produto de limpeza", "material de limpeza"))
             return "sticker:LIMPEZA";
         if (hasAny(s, "celular", "telefone", "smartphone", "televisao", "tv", "computador",
                 "notebook", "laptop", "tablet", "mouse", "teclado", "carregador", "cabo usb",
                 "tomada", "fone", "headphone", "caixa de som", "camera", "roteador", "console", "cabo hdmi", "controle remoto", "webcam", "microfone", "smartwatch", "monitor", "capinha de celular", "pelicula de celular", "cartao de memoria",
-                "video game", "controle", "pilha", "bateria", "pendrive", "memoria", "hd externo"))
+                "video game", "controle", "pilha", "bateria", "pendrive", "memoria", "hd externo", "eletronico", "eletronica", "eletronicos", "eletronicas", "acessorio eletronico"))
             return "sticker:ELETRONICO";
         if (hasAny(s, "camiseta", "calca", "bermuda", "vestido", "saia", "blusa", "camisa",
                 "meia", "cueca", "calcinha", "sutia", "tenis", "sapato", "chinelo", "sandalia",
@@ -89,7 +89,7 @@ public final class StickerCatalog {
                 "protetor solar", "maquiagem", "batom", "esmalte", "sabonete", "absorvente", "pente", "escova de cabelo", "pinça", "algodao", "acetona", "lixa de unha", "removedor de esmalte",
                 "fralda", "barbeador", "lamina de barbear"))
             return "sticker:BELEZA";
-        if (hasAny(s, "caderno", "lapis", "caneta", "borracha escolar", "apontador", "marca texto",
+        if (hasAny(s, "caderno", "material escolar", "papelaria", "lapis", "caneta", "borracha escolar", "apontador", "marca texto",
                 "marcador", "papel sulfite", "folha a4", "grampeador", "clipe", "cola escolar",
                 "tesoura", "regua", "pasta escolar", "agenda", "livro", "etiqueta"))
             return "sticker:PAPELARIA";
@@ -133,7 +133,7 @@ public final class StickerCatalog {
             return "sticker:PRESENTE";
         if (hasAny(s, "arroz", "feijao", "macarrao", "farinha", "acucar", "sal", "fruta",
                 "verdura", "legume", "carne", "leite", "queijo", "pao", "biscoito", "cafe",
-                "suco", "refrigerante", "tempero", "manteiga", "margarina", "acucar", "farinha", "oleo", "vinagre", "cereal", "aveia", "granola", "fuba", "farofa", "molho", "geleia", "gelatina", "fermento", "achocolatado", "condimento", "maionese", "ketchup", "mostarda", "azeitona", "palmito", "atum", "salame", "mortadela", "salmao", "pasta de amendoim", "leite de coco", "mandioca", "inhame"))
+                "suco", "refrigerante", "tempero", "alimento", "alimentos", "comida", "manteiga", "margarina", "acucar", "farinha", "oleo", "vinagre", "cereal", "aveia", "granola", "fuba", "farofa", "molho", "geleia", "gelatina", "fermento", "achocolatado", "condimento", "maionese", "ketchup", "mostarda", "azeitona", "palmito", "atum", "salame", "mortadela", "salmao", "pasta de amendoim", "leite de coco", "mandioca", "inhame"))
             return "sticker:ALIMENTO";
         if (hasAny(s, "papel higienico", "papel toalha", "guardanapo", "lixeira", "escova de limpeza",
                 "esponja", "sabao", "limpeza"))
