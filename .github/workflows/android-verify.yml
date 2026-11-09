@@ -35,7 +35,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null
           sdkmanager "platforms;android-37" "build-tools;36.0.0"
 
       - name: Configure Gradle 9.6.0
