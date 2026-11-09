@@ -73,18 +73,18 @@ O manifesto público é:
 
 ## Estado de validação
 
-A compilação Debug `1.0.7` foi concluída com sucesso no GitHub Actions. O APK passou nas verificações de pacote, versão, arquitetura ARM64, integridade ZIP e assinatura V2. A Release oficial (`br.com.shoppinglist`) ainda depende de uma chave privada de distribuição configurada nos quatro Secrets e não foi publicada.
+A compilação Debug `1.0.8` foi concluída com sucesso no GitHub Actions. O APK passou nas verificações de pacote, versão, arquitetura ARM64, integridade ZIP e assinatura V2. A Release oficial (`br.com.shoppinglist`) ainda depende de uma chave privada de distribuição configurada nos quatro Secrets e não foi publicada.
 
 
 ## Assinatura das compilações e atualização
 
 O APK produzido por `android-verify.yml` é somente de teste e usa o identificador `br.com.shoppinglist.debug`. A assinatura Debug foi configurada para persistir no cache do GitHub Actions, com execução agendada para manter o cache ativo. Não use esse artefato como Release.
 
-A versão-base do projeto agora é `versionCode 8` / `1.0.6`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping Lists APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões.
+A versão-base do projeto agora é `versionCode 9` / `1.0.8`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping Lists APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões.
 
 **Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública, portanto não é possível reconstruir a chave privada nem assinar um APK de atualização compatível com aquela instalação. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
 
-O APK Debug `1.0.7` está publicado como arquivo direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test). Baixe `Shopping-Lists-debug.apk` diretamente em **Assets**. O ZIP de artefatos das Actions serve apenas para inspeção; não extraia e instale a partir dele no celular.
+O APK Debug `1.0.8` está publicado como arquivo direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test). Baixe `Shopping-Lists-debug.apk` diretamente em **Assets**. O ZIP de artefatos das Actions serve apenas para inspeção; não extraia e instale a partir dele no celular.
 
 ## Baixar o aplicativo pelo GitHub Mobile
 
