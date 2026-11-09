@@ -1,0 +1,55 @@
+name: Inspect Shopping List Java source
+
+on:
+  push:
+    paths:
+      - ".github/workflows/inspect-code.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract and print application source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/shopping-list
+          unzip -q Shopping_List_Project_com_Atualizador.zip -d /tmp/shopping-list
+          ROOT=/tmp/shopping-list/ShoppingListProject
+          for file in \
+            app/src/main/java/br/com/shoppinglist/app/UpdateConfig.java \
+            app/src/main/java/br/com/shoppinglist/app/UpdateManager.java \
+            app/src/main/java/br/com/shoppinglist/app/ApkFileProvider.java \
+            app/src/main/java/br/com/shoppinglist/app/AppDatabase.java \
+            app/src/main/java/br/com/shoppinglist/app/ShoppingListRenderer.java \
+            app/src/main/java/br/com/shoppinglist/app/EmojiCatalog.java \
+            app/src/main/AndroidManifest.xml \
+            app/build.gradle \
+            settings.gradle \
+            gradle/wrapper/gradle-wrapper.properties \
+            signing/KEYSTORE_BACKUP_NOTICE.txt
+          do
+            echo "===== FILE: $file ====="
+            if [[ -f "$ROOT/$file" ]]; then
+              python3 - "$ROOT/$file" <<'PY'
+          import pathlib, re, sys
+          p = pathlib.Path(sys.argv[1])
+          for line in p.read_text(errors="replace").splitlines():
+              if re.search(r"password|secret|token|credential|private.?key|keystorepass|keypass", line, re.I):
+                  print(re.sub(r"(?i)(password|secret|token|credential)(\s*[:=]\s*)\S+", r"\1\2[REDACTED]", line))
+              else:
+                  print(line)
+          PY
+            else
+              echo "[arquivo não encontrado]"
+            fi
+          done
+
+          echo "===== MAIN ACTIVITY: UPDATE + LIST MANAGEMENT (600-760) ====="
+          sed -n '600,760p' "$ROOT/app/src/main/java/br/com/shoppinglist/app/MainActivity.java"
+          echo "===== README PROJECT ====="
+          sed -n '1,220p' "$ROOT/README.md"
