@@ -49,7 +49,16 @@ jobs:
             fi
           done
 
-          echo "===== MAIN ACTIVITY: UPDATE + LIST MANAGEMENT (600-760) ====="
-          sed -n '600,760p' "$ROOT/app/src/main/java/br/com/shoppinglist/app/MainActivity.java"
+          MAIN="$ROOT/app/src/main/java/br/com/shoppinglist/app/MainActivity.java"
+          echo "===== MAIN ACTIVITY LINE COUNT ====="
+          wc -l "$MAIN"
+          echo "===== MAIN ACTIVITY (1-320) ====="
+          sed -n '1,320p' "$MAIN"
+          echo "===== MAIN ACTIVITY (321-620) ====="
+          sed -n '321,620p' "$MAIN"
+          echo "===== MAIN ACTIVITY (761-1100) ====="
+          sed -n '761,1100p' "$MAIN"
+          echo "===== APP .GITIGNORE ====="
+          cat "$ROOT/.gitignore"
           echo "===== README PROJECT ====="
           sed -n '1,220p' "$ROOT/README.md"
