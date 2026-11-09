@@ -241,6 +241,7 @@ jobs:
               stored = [item.filename for item in native if item.compress_type == ZIP_STORED]
               if stored:
                   raise SystemExit("Bibliotecas nativas continuam sem compressão: " + ", ".join(stored[:5]))
+          PY
           BADGING="$("$AAPT" dump badging release-files/ShoppingList.apk)"
           printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${VERSION_CODE}' versionName='${VERSION_NAME}'"
           printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
