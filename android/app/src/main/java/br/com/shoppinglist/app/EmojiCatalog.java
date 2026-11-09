@@ -188,7 +188,7 @@ public final class EmojiCatalog {
     /** Lightweight on-device product recognition: synonyms + accents + one/two-letter typo tolerance. */
     public static String automatic(String value) {
         String s = normalize(value);
-        if (s.isEmpty()) return "sticker:OUTRO";
+        if (s.isEmpty()) return "🛒";
         for (String[] rule : RULES) {
             for (String term : rule[0].split("\\|")) {
                 String normalizedTerm = normalize(term);
