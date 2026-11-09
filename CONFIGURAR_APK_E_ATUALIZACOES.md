@@ -105,6 +105,12 @@ O workflow `Verify Shopping Lists Release` compila somente a variante `release`,
 
 Esse workflow é apenas uma verificação automatizada: o candidato gerado não tem assinatura e não é publicado como download. Nenhum APK Debug é publicado por esse fluxo.
 
+## Histórico no menu Releases
+
+Cada versão publicada recebe uma tag exclusiva no formato `v<versionName>` e permanece no menu **Releases** do repositório. O workflow verifica antes da compilação se a tag já existe e interrompe a publicação caso alguém tente reutilizar uma versão. Os arquivos das publicações anteriores não são sobrescritos nem removidos.
+
+O histórico do GitHub só pode mostrar como versão distribuível uma versão cujo APK tenha sido efetivamente gerado. Não crie Release falsa nem anexe um APK de outra versão para preencher lacunas históricas.
+
 ## Publicação oficial
 
 Somente o workflow `Build Shopping Lists APK` publica uma versão instalável. Ele exige os quatro Secrets de assinatura privada, gera o APK Release otimizado, verifica as assinaturas V1/V2/V3/V4 e publica `Shopping-Lists.apk`, a assinatura V4 e o SHA-256.
