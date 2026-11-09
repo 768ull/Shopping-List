@@ -85,7 +85,7 @@ jobs:
       - name: Preparar Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Instalar plataforma Android 17
+      - name: Instalar plataforma Android API 37
         shell: bash
         run: |
           yes | sdkmanager --licenses >/dev/null
