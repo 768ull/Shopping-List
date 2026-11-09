@@ -24,7 +24,7 @@ O `android/app/build.gradle` já ativa as assinaturas V1, V2, V3 e V4. A V4 gera
 
 O ZIP original continha `signing/shopping-list-release.jks` e `signing/signing.properties`. Como o repositório é público, esses arquivos foram expostos em commits anteriores. O keystore foi removido da árvore atual, mas isso não apaga as versões antigas do arquivo no histórico GitHub.
 
-**Não use a chave antiga como chave de distribuição segura.** Se já existir uma instalação do Shopping List assinada com ela, uma nova chave não será aceita como atualização normal. Nesse caso, é preciso preservar a identidade antiga ou planejar uma rotação compatível antes de distribuir o novo APK. O repositório possui a pré-release de teste `debug-test` com o APK Debug `1.0.10` (`versionCode 11`) e o pacote ZIP alternativo; ainda não possui uma Release oficial de produção. Isso não confirma se você instalou alguma compilação local.
+**Não use a chave antiga como chave de distribuição segura.** Se já existir uma instalação do Shopping List assinada com ela, uma nova chave não será aceita como atualização normal. Nesse caso, é preciso preservar a identidade antiga ou planejar uma rotação compatível antes de distribuir o novo APK. O repositório possui a pré-release de teste `debug-test` com o APK Debug `1.0.10` (`versionCode 11`) e o pacote ZIP alternativo. A próxima compilação de teste restaura o esquema V2 e o certificado Debug anterior; ainda não existe Release oficial de produção. Isso não confirma se você instalou alguma compilação local.
 
 ### Criar e guardar uma chave de distribuição
 
@@ -66,14 +66,14 @@ O workflow decodifica o keystore no diretório temporário `android/signing/`, c
 
 1. Configure os quatro Secrets acima.
 2. Abra **Actions → Build Shopping Lists APK → Run workflow**.
-3. Para a primeira publicação oficial desta base, use `version_code=11` e `version_name=1.0.10`, que correspondem à versão-base atual do projeto. O workflow Release exige que os quatro Secrets de assinatura estejam configurados.
+3. Para a primeira publicação oficial desta base, use `version_code=12` e `version_name=1.0.11`, que correspondem à versão-base atual do projeto. O workflow Release exige que os quatro Secrets de assinatura estejam configurados.
 4. O workflow compila, valida o APK, publica o Release e atualiza `update.json`.
 
 O pipeline confirma V1/V2/V3 com `apksigner` e exige o arquivo `.idsig` para V4.
 
 ## Publicar atualizações futuras
 
-Depois da publicação `version_code=11` / `version_name=1.0.10`, aumente o código a cada versão: 12, 13 e assim por diante. Os próximos nomes podem ser 1.0.11, 1.0.12 etc. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `Shopping-Lists.apk`, `Shopping-Lists.apk.idsig`, SHA-256 e atualiza o manifesto.
+Depois da publicação `version_code=12` / `version_name=1.0.11`, aumente o código a cada versão: 12, 13 e assim por diante. Os próximos nomes podem ser 1.0.11, 1.0.12 etc. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `Shopping-Lists.apk`, `Shopping-Lists.apk.idsig`, SHA-256 e atualiza o manifesto.
 
 O aplicativo consulta:
 `https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
