@@ -74,6 +74,10 @@ final class UpdateManager {
                 connection.setRequestProperty("Accept", "application/json");
                 connection.setRequestProperty("User-Agent", "ShoppingList-Android");
                 int status = connection.getResponseCode();
+                URL finalManifestUrl = connection.getURL();
+                if (!"https".equalsIgnoreCase(finalManifestUrl.getProtocol())) {
+                    throw new IllegalStateException("A consulta foi redirecionada para um endereço sem HTTPS.");
+                }
                 if (status != HttpURLConnection.HTTP_OK) {
                     throw new IllegalStateException(status == 404
                             ? "A fonte de atualizações ainda não foi publicada."
@@ -94,7 +98,9 @@ final class UpdateManager {
                 }
                 JSONObject json = new JSONObject(body);
                 int remoteCode = json.getInt("versionCode");
-                String remoteName = json.optString("versionName", "");
+                if (remoteCode < 1) throw new IllegalStateException("O manifesto contém um versionCode inválido.");
+                String remoteName = json.optString("versionName", "").trim();
+                if (remoteName.isEmpty()) throw new IllegalStateException("O manifesto não informa versionName.");
                 String apkUrl = json.optString("apkUrl", "");
                 String notes = json.optString("changelog", "");
                 String digest = json.optString("sha256", "").replace(" ", "").toLowerCase(Locale.ROOT);
@@ -138,6 +144,10 @@ final class UpdateManager {
                 connection.setReadTimeout(READ_TIMEOUT_MS);
                 connection.setRequestProperty("User-Agent", "ShoppingList-Android");
                 int status = connection.getResponseCode();
+                URL finalDownloadUrl = connection.getURL();
+                if (!"https".equalsIgnoreCase(finalDownloadUrl.getProtocol())) {
+                    throw new IllegalStateException("O download foi redirecionado para um endereço sem HTTPS.");
+                }
                 if (status != HttpURLConnection.HTTP_OK) {
                     throw new IllegalStateException("Falha ao baixar a atualização (HTTP " + status + ").");
                 }
@@ -213,8 +223,8 @@ final class UpdateManager {
         }
         long candidateCode = Build.VERSION.SDK_INT >= 28
                 ? candidate.getLongVersionCode() : candidate.versionCode;
-        if (candidateCode < expectedVersionCode || candidateCode <= installedVersionCode(activity)) {
-            throw new IllegalStateException("O APK não contém uma versão mais recente.");
+        if (candidateCode != expectedVersionCode || candidateCode <= installedVersionCode(activity)) {
+            throw new IllegalStateException("A versão do APK não corresponde exatamente ao manifesto ou não é mais recente.");
         }
         android.content.pm.Signature[] installedSignatures;
         android.content.pm.Signature[] candidateSignatures;
