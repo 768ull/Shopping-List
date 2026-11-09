@@ -1,61 +1,70 @@
 # Compilação do Shopping List e atualizações
 
-O projeto Android está em `Shopping_List_Project_com_Atualizador.zip`. O workflow testa o pacote, extrai os arquivos, localiza o módulo `app` e procura a raiz Gradle pelo arquivo `settings.gradle` ou `settings.gradle.kts`.
+## Estrutura do código
 
-O pipeline instala JDK 17, Android SDK API 37, Build Tools 36.0.0 e usa o Gradle Wrapper do projeto quando disponível; caso contrário, usa Gradle 9.6.0.
+O projeto Android está na pasta `android/`. Abra essa pasta no Android Studio. O módulo principal é `android/app`, com namespace `br.com.shoppinglist.app` e identificador instalado `br.com.shoppinglist`.
+
+O ZIP `Shopping_List_Project_com_Atualizador.zip` foi mantido como cópia do projeto original, mas a versão atual dele e a pasta `android/` não incluem keystores nem arquivos de senha.
+
+## Ambiente de compilação
+
+- JDK 17
+- Android SDK Platform 37
+- Android SDK Build Tools 36.0.0
+- Android Gradle Plugin 9.5.0
+- Gradle 9.6.0
+
+O workflow utiliza a pasta versionada `android/`, testa o caminho do módulo e compila `:app:assembleRelease`.
 
 ## Assinatura do APK
 
-O workflow configura explicitamente as assinaturas Android V1, V2, V3 e V4 no build de Release. As assinaturas V1, V2 e V3 ficam no APK; a V4 é fornecida em um arquivo separado chamado `.idsig`.
+O `android/app/build.gradle` já ativa as assinaturas V1, V2, V3 e V4. A V4 gera o arquivo separado `.idsig`.
 
-### Chave incluída no ZIP
+### Atenção sobre a chave antiga
 
-O ZIP originalmente enviado contém uma chave de desenvolvimento e o arquivo de credenciais em `signing/`. Como o repositório é público, essa chave e suas credenciais devem ser consideradas expostas. O workflow não usa essa chave automaticamente.
+O ZIP original continha `signing/shopping-list-release.jks` e `signing/signing.properties`. Como o repositório é público, esses arquivos foram expostos em commits anteriores. A cópia atual do ZIP foi limpa e o keystore foi removido da árvore `android/`, mas a remoção do arquivo atual não apaga automaticamente as versões antigas do histórico GitHub.
 
-**Não substitua a chave antiga sem verificar se algum APK já foi distribuído ou instalado com ela.** O Android não permite atualizar normalmente um aplicativo instalado com um APK assinado por um certificado diferente. Se já houver instalações usando a chave antiga, é necessário preservar a mesma identidade de assinatura ou planejar uma rotação compatível antes de publicar uma chave nova.
+**Não use a chave antiga como chave de distribuição segura.** Se já existir uma instalação do Shopping List assinada com ela, uma nova chave não será aceita como atualização normal. Nesse caso, é preciso preservar a identidade antiga ou planejar uma rotação compatível antes de distribuir o novo APK. O repositório ainda não possui GitHub Release publicado, mas isso não confirma se você instalou alguma compilação local.
 
-### Configurar os GitHub Actions Secrets
+### Criar e guardar uma chave de distribuição
 
-Crie ou selecione uma chave privada de distribuição adequada. Não a envie ao repositório.
+Em um computador com JDK instalado, crie uma chave nova:
 
-Converta o arquivo para Base64. Em Linux/macOS:
+```bash
+keytool -genkeypair -v -keystore shopping-list-release.jks -alias shoppinglist -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Guarde o arquivo e as senhas em local privado e faça uma cópia de segurança offline. Não envie o JKS ao repositório.
+
+Converta o keystore para Base64. Em Linux/macOS:
 
 ```bash
 base64 -w 0 shopping-list-release.jks
 ```
 
-No GitHub, abra **Settings → Secrets and variables → Actions → New repository secret** e configure:
+No GitHub, abra **Settings → Secrets and variables → Actions → New repository secret** e crie:
 
-- `SHOPPING_KEYSTORE_BASE64`: todo o texto Base64 do keystore.
+- `SHOPPING_KEYSTORE_BASE64`: conteúdo Base64 do arquivo JKS.
 - `SHOPPING_KEYSTORE_PASSWORD`: senha do keystore.
-- `SHOPPING_KEY_ALIAS`: alias da chave.
+- `SHOPPING_KEY_ALIAS`: alias definido no keytool.
 - `SHOPPING_KEY_PASSWORD`: senha da chave.
 
-O workflow decodifica o keystore em um diretório temporário, valida o alias com `keytool` e injeta a configuração de assinatura apenas durante a compilação. Os valores secretos não são gravados no Git.
+O workflow decodifica o keystore no diretório temporário `android/signing/`, cria `signing.properties` para a compilação, valida o alias e usa a configuração `signingConfigs.release` já existente no projeto. Esses arquivos temporários não são enviados ao Git.
 
-## Gerar a primeira versão
+## Gerar o primeiro APK
 
-1. Abra **Actions** no repositório e selecione **Build Shopping List APK**.
-2. Clique em **Run workflow**.
-3. Use `version_code=1` e `version_name=1.0` enquanto `apkUrl` estiver vazio em `update.json`.
-4. Aguarde a execução terminar. O APK só é publicado se a compilação, a verificação das assinaturas V1/V2/V3 e a geração do arquivo V4 `.idsig` forem bem-sucedidas.
+1. Configure os quatro Secrets acima.
+2. Abra **Actions → Build Shopping List APK → Run workflow**.
+3. Para a primeira publicação, use `version_code=1` e `version_name=1.0`, enquanto `apkUrl` estiver vazio no manifesto.
+4. O workflow compila, valida o APK, publica o Release e atualiza `update.json`.
 
-A primeira versão pode usar o número 1 mesmo que o manifesto inicial já contenha `versionCode: 1`, desde que ainda não exista um `apkUrl` publicado.
+O pipeline confirma V1/V2/V3 com `apksigner` e exige o arquivo `.idsig` para V4.
 
 ## Publicar atualizações futuras
 
-Para cada atualização, aumente o `version_code`: 2, 3, 4 etc. Use um `version_name` apropriado, como 1.1 ou 1.2. Mantenha a mesma chave privada usada na instalação anterior. O workflow publica o APK e atualiza `update.json` com URL, SHA-256, versão e changelog.
+Aumente `version_code` em cada publicação: 2, 3, 4 etc. Use um nome de versão como 1.1 ou 1.2. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `ShoppingList.apk`, `ShoppingList.apk.idsig`, SHA-256 e atualiza o manifesto.
 
-## Validações do pipeline
+O aplicativo consulta:
+`https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
 
-O workflow:
-- testa a integridade do ZIP antes de extrair;
-- exige exatamente um `app/build.gradle` e encontra a raiz Gradle;
-- valida os quatro Secrets e o alias do keystore;
-- rejeita números de versão inválidos ou repetidos após a primeira publicação;
-- configura V1, V2, V3 e V4;
-- compila o módulo Release e exige um APK e o arquivo `.idsig`;
-- verifica V1/V2/V3 com `apksigner`, gera SHA-256, guarda o artefato e publica o Release;
-- atualiza `update.json` somente depois da publicação.
-
-A integração desta revisão não conseguiu ler os bytes internos do ZIP nem iniciar uma execução do GitHub Actions. Portanto, a configuração do pipeline foi corrigida, mas o código-fonte do app e o APK ainda precisam ser validados por uma execução real.
+O atualizador verifica HTTPS, SHA-256, identificador do pacote, versão e certificado de assinatura antes de abrir o instalador oficial do Android. A confirmação de instalação continua sendo feita pelo próprio Android.
