@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import re
 import sys
+import time
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -37,10 +40,32 @@ CLDR_SOURCES = (
 def download(url: str) -> bytes:
     request = urllib.request.Request(
         url,
-        headers={"User-Agent": "ShoppingList-Unicode-Catalog-Updater/1.0"},
+        headers={
+            "User-Agent": "ShoppingList-Unicode-Catalog-Updater/1.0",
+            "Accept-Encoding": "identity",
+            "Connection": "close",
+        },
     )
-    with urllib.request.urlopen(request, timeout=45) as response:
-        return response.read()
+    last_error: Exception | None = None
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                payload = response.read()
+                if not payload:
+                    raise OSError(f"Resposta vazia ao baixar {url}")
+                return payload
+        except (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError) as error:
+            last_error = error
+            if attempt == 3:
+                break
+            delay = 2 ** attempt
+            print(
+                f"Download interrompido ({url}); nova tentativa em {delay}s "
+                f"({attempt + 2}/4): {error}",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+    raise RuntimeError(f"Não foi possível baixar {url} após 4 tentativas.") from last_error
 
 
 def read_existing_catalog() -> dict[str, str]:
