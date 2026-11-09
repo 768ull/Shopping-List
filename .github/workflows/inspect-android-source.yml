@@ -1,0 +1,51 @@
+name: Inspect Shopping List source archive
+
+on:
+  push:
+    paths:
+      - ".github/workflows/inspect-android-source.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract and inspect source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/shopping-list-source
+          unzip -q Shopping_List_Project_com_Atualizador.zip -d /tmp/shopping-list-source
+
+          echo "===== ARCHIVE FILE INVENTORY ====="
+          find /tmp/shopping-list-source -type f -printf '%P | %s bytes\n' | sort
+
+          echo "===== ANDROID/GRADLE CONFIG FILES ====="
+          while IFS= read -r file; do
+            echo "--- ${file#/tmp/shopping-list-source/} ---"
+            python3 - "$file" <<'PY'
+          import pathlib, re, sys
+          p = pathlib.Path(sys.argv[1])
+          try:
+              text = p.read_text(errors="replace")
+          except Exception as exc:
+              print(f"[unreadable: {exc}]")
+              raise SystemExit(0)
+          for line in text.splitlines():
+              if re.search(r"password|secret|token|credential|keystorepass|keypass", line, re.I):
+                  print(re.sub(r"(?i)(password|secret|token|credential)(\s*[:=]\s*)\S+", r"\1\2[REDACTED]", line))
+              else:
+                  print(line)
+          PY
+          done < <(find /tmp/shopping-list-source -type f \( -name 'build.gradle' -o -name 'build.gradle.kts' -o -name 'settings.gradle' -o -name 'settings.gradle.kts' -o -name 'gradle.properties' -o -name 'AndroidManifest.xml' -o -name 'signing.properties' \) | sort)
+
+          echo "===== SIGNING FILE NAMES (CONTENTS NOT PRINTED) ====="
+          find /tmp/shopping-list-source -type f \( -iname '*.jks' -o -iname '*.keystore' -o -iname '*signing*.properties' \) -printf '%P | %s bytes\n' | sort || true
+
+          echo "===== APP UPDATE/INSTALL REFERENCES ====="
+          grep -R -n -E 'update\.json|apkUrl|versionCode|PackageInstaller|ACTION_INSTALL_PACKAGE|requestInstallPackages|sha256|SHA-256' /tmp/shopping-list-source --include='*.java' --include='*.kt' --include='*.xml' --include='*.gradle' --include='*.gradle.kts' --include='*.json' --exclude='signing.properties' || true
