@@ -224,6 +224,108 @@ public final class AppDatabase extends SQLiteOpenHelper {
         getWritableDatabase().update("lists", values, "_id=?", new String[]{String.valueOf(listId)});
     }
 
+    /** Exporta uma cópia portátil das listas, itens, estados e emojis. */
+    public JSONObject exportBackup() throws JSONException {
+        JSONObject backup = new JSONObject();
+        backup.put("format", "shopping-lists-backup");
+        backup.put("schemaVersion", 1);
+        backup.put("exportedAt", System.currentTimeMillis());
+
+        JSONArray listsJson = new JSONArray();
+        for (ShoppingList list : getLists()) {
+            JSONObject listJson = new JSONObject();
+            listJson.put("title", list.title == null ? "Minha lista" : list.title);
+            listJson.put("pinned", list.pinned);
+            listJson.put("updatedAt", list.updatedAt);
+
+            JSONArray itemsJson = new JSONArray();
+            List<ShoppingItem> items = getItems(list.id);
+            for (int index = 0; index < items.size(); index++) {
+                ShoppingItem item = items.get(index);
+                JSONObject itemJson = new JSONObject();
+                itemJson.put("text", item.text == null ? "" : item.text);
+                itemJson.put("emoji", item.emoji == null ? "🛒" : item.emoji);
+                itemJson.put("checked", item.checked);
+                itemJson.put("emojiManual", item.emojiManual);
+                itemJson.put("position", index);
+                itemsJson.put(itemJson);
+            }
+            listJson.put("items", itemsJson);
+            listsJson.put(listJson);
+        }
+        backup.put("lists", listsJson);
+        return backup;
+    }
+
+    /** Importa um backup sem apagar as listas que já existem neste aparelho. */
+    public int importBackup(JSONObject backup) throws JSONException {
+        if (backup == null
+                || !"shopping-lists-backup".equals(backup.optString("format"))
+                || backup.optInt("schemaVersion", -1) != 1) {
+            throw new JSONException("Este arquivo não é um backup válido do Shopping Lists.");
+        }
+
+        JSONArray listsJson = backup.optJSONArray("lists");
+        if (listsJson == null || listsJson.length() == 0) {
+            throw new JSONException("O backup não contém listas para importar.");
+        }
+        if (listsJson.length() > 1000) {
+            throw new JSONException("O backup contém listas demais.");
+        }
+
+        int totalItems = 0;
+        for (int i = 0; i < listsJson.length(); i++) {
+            JSONObject listJson = listsJson.optJSONObject(i);
+            if (listJson == null || listJson.optJSONArray("items") == null) {
+                throw new JSONException("O backup contém uma lista inválida.");
+            }
+            totalItems += listJson.optJSONArray("items").length();
+            if (totalItems > 50000) {
+                throw new JSONException("O backup contém produtos demais.");
+            }
+        }
+
+        SQLiteDatabase db = getWritableDatabase();
+        int importedLists = 0;
+        db.beginTransaction();
+        try {
+            for (int i = 0; i < listsJson.length(); i++) {
+                JSONObject listJson = listsJson.getJSONObject(i);
+                String title = cleanTitle(listJson.optString("title", "Minha lista"));
+                long now = System.currentTimeMillis();
+                long updatedAt = Math.max(0L, listJson.optLong("updatedAt", now));
+
+                ContentValues listValues = new ContentValues();
+                listValues.put("title", title);
+                listValues.put("pinned", listJson.optBoolean("pinned", false) ? 1 : 0);
+                listValues.put("created_at", now);
+                listValues.put("updated_at", updatedAt);
+                long newListId = db.insertOrThrow("lists", null, listValues);
+
+                JSONArray itemsJson = listJson.getJSONArray("items");
+                for (int j = 0; j < itemsJson.length(); j++) {
+                    JSONObject itemJson = itemsJson.getJSONObject(j);
+                    String emoji = itemJson.optString("emoji", "🛒");
+                    if (emoji.trim().isEmpty()) emoji = "🛒";
+
+                    ContentValues itemValues = new ContentValues();
+                    itemValues.put("list_id", newListId);
+                    itemValues.put("text", itemJson.optString("text", ""));
+                    itemValues.put("emoji", emoji);
+                    itemValues.put("checked", itemJson.optBoolean("checked", false) ? 1 : 0);
+                    itemValues.put("emoji_manual", itemJson.optBoolean("emojiManual", false) ? 1 : 0);
+                    itemValues.put("position", Math.max(0, itemJson.optInt("position", j)));
+                    db.insertOrThrow("items", null, itemValues);
+                }
+                importedLists++;
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+        return importedLists;
+    }
+
     private static String cleanTitle(String value) {
         String title = value == null ? "" : value.trim();
         return title.isEmpty() ? "Minha lista" : title;
