@@ -27,7 +27,7 @@ public final class StickerCatalog {
     }
 
     private static final Sticker[] ITEMS = {
-        new Sticker("OUTRO", "Produto em identificação", "🧠", 0xFFE9E2D5, 0xFF594B38),
+        new Sticker("OUTRO", "Produto em identificação", "?", 0xFFE9E2D5, 0xFF594B38),
         new Sticker("BEBIDA", "Bebidas", "🥤", 0xFFDDF0FF, 0xFF28558F),
         new Sticker("AGUA", "Água mineral", "💧", 0xFFDDF2FF, 0xFF236B9B),
         new Sticker("SUCO", "Sucos e néctares", "🧃", 0xFFFFE6B8, 0xFF9A571C),
@@ -50,9 +50,9 @@ public final class StickerCatalog {
         new Sticker("BELEZA", "Higiene e beleza", "🧴", 0xFFF2DFF5, 0xFF76417F),
         new Sticker("PAPELARIA", "Papelaria e escritório", "✏️", 0xFFE4E8FF, 0xFF444D91),
         new Sticker("FERRAMENTA", "Ferramentas", "🔧", 0xFFFFE8D2, 0xFF88501F),
-        new Sticker("CASA", "Casa e utilidades", "🏠", 0xFFFFE9D6, 0xFF89552B),
-        new Sticker("COZINHA", "Cozinha e utensílios", "🍳", 0xFFFFE8B8, 0xFF805516),
-        new Sticker("PET", "Produtos para animais", "🐾", 0xFFE4F1D9, 0xFF3F6A32),
+        new Sticker("CASA", "Casa e utilidades", "🛋️", 0xFFFFE9D6, 0xFF89552B),
+        new Sticker("COZINHA", "Cozinha e utensílios", "🍴", 0xFFFFE8B8, 0xFF805516),
+        new Sticker("PET", "Produtos para animais", "🦴", 0xFFE4F1D9, 0xFF3F6A32),
         new Sticker("BRINQUEDO", "Brinquedos e jogos", "🧸", 0xFFFFE1B5, 0xFF93541C),
         new Sticker("AUTOMOVEL", "Carro e moto", "🚗", 0xFFDCEBEE, 0xFF245A65),
         new Sticker("BEBE", "Bebês e crianças", "🍼", 0xFFFFE3E8, 0xFF9B475B),
