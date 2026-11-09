@@ -74,19 +74,16 @@ O manifesto público é:
 
 ## Estado de validação
 
-A compilação Debug `1.0.11` anterior foi aprovada com assinatura V2 e certificado preservado. A nova base `1.0.12` (versionCode 13) adiciona backup/restauração JSON e otimização R8 no Release. O Release oficial (`br.com.shoppinglist`) ainda depende de uma nova chave privada configurada nos quatro Secrets; a publicação só estará concluída depois de o workflow de distribuição assinar e publicar o APK.
+A base atual do aplicativo é **1.0.12 (versionCode 13)**. O Release oficial usa o pacote `br.com.shoppinglist`, otimização R8 e redução de recursos. A publicação instalável só acontece pelo workflow **Build Shopping Lists APK**, depois de a assinatura privada ser configurada nos quatro Secrets do GitHub Actions.
+
+O workflow **Verify Shopping Lists Release** agora compila e valida exclusivamente a variante Release otimizada. Ele não gera nem publica APK Debug, e verifica que o pacote oficial não tenha sufixo `-debug` nem esteja marcado como `debuggable`.
 
 
-## Assinatura das compilações e atualização
+## Compilações de teste e distribuição oficial
 
-O APK produzido por `android-verify.yml` é somente de teste e usa o identificador `br.com.shoppinglist.debug`. A assinatura Debug foi configurada para persistir no cache do GitHub Actions, com execução agendada para manter o cache ativo. Não use esse artefato como Release. O build oficial usa `br.com.shoppinglist`, não inclui o sufixo `-debug` no nome da versão e ativa R8 para reduzir código e recursos não utilizados.
+A variante Debug é reservada a testes de desenvolvimento e não é o aplicativo oficial. Ela usa outro identificador Android e pode exibir a marcação `-debug`; não instale compilações Debug como atualização da versão oficial.
 
-A versão-base do projeto agora é `versionCode 13` / `1.0.12`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping Lists APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões. A chave antiga apareceu no histórico público e deve ser considerada comprometida; use uma nova chave privada e não a envie ao repositório ou ao chat.
-
-**Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública. O certificado SHA-256 do primeiro APK foi `3820DF20A66A84377D2C4381CD35CFD89B94E326375676A192A02F871C322207`; os APKs Debug 1.0.9, 1.0.10 e 1.0.11 usam `92CC0214682FE7B5C8310703F9DC22143264BAF383A95ACD8775867DB77949A4`. Se a primeira compilação ainda estiver instalada, o Android não aceitará a atualização por cima devido à diferença de assinatura. O app antigo não tem exportação de backup JSON; antes de desinstalá-lo, salve suas listas em PDF ou imagens. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
-
-O APK Debug `1.0.11` (`versionCode 12`) está publicado com assinatura V2 e certificado preservado: [baixar APK](https://github.com/768ull/Shopping-List/releases/download/debug-test/Shopping-Lists-debug.apk) ou [baixar ZIP para extração](https://github.com/768ull/Shopping-List/releases/download/debug-test/Shopping-Lists-debug-download.zip). O ZIP de artefatos das Actions serve apenas para inspeção; não o use como pacote de instalação. Para o download alternativo, use o ZIP de Release indicado acima.
-
+O workflow **Verify Shopping Lists Release** serve somente para validar a compilação otimizada sem assinatura. Ele não publica arquivos instaláveis. O único fluxo autorizado a publicar o APK distribuível é **Build Shopping Lists APK**, que gera `Shopping-Lists.apk` com o pacote `br.com.shoppinglist`, assinatura V1/V2/V3/V4, otimização R8 e checksum. Ele exige os quatro Secrets de assinatura descritos em [CONFIGURAR_APK_E_ATUALIZACOES.md](CONFIGURAR_APK_E_ATUALIZACOES.md).
 
 ## Migração para a primeira versão oficial
 
@@ -102,13 +99,11 @@ O backup leva títulos, produtos, posição, marcações de compra, emojis e ade
 
 **Depois dessa migração inicial**, as atualizações da versão oficial são instaladas por cima, sem desinstalar, desde que cada nova versão use o mesmo identificador `br.com.shoppinglist`, um `versionCode` maior e exatamente a mesma chave privada Release. O atualizador verifica o certificado antes de abrir o instalador do Android.
 
-## Baixar o aplicativo pelo GitHub Mobile
+## Baixar o aplicativo oficial pelo GitHub Mobile
 
-As versões instaláveis do Shopping Lists são publicadas na área **Releases** deste repositório. No aplicativo oficial do GitHub para Android, abra este repositório, entre em **Releases**, escolha a versão desejada e toque no arquivo **Shopping-Lists.apk** em **Assets**. Não use **Code → Download ZIP** para instalar: esse ZIP contém o código-fonte, não o aplicativo.
+As versões instaláveis oficiais ficam em **Releases** deste repositório. Baixe somente o arquivo **Shopping-Lists.apk** de uma versão publicada pelo workflow **Build Shopping Lists APK**. Não use **Code → Download ZIP**, artefatos de verificação ou APKs de teste: eles não são a distribuição oficial.
 
-Para o APK de teste Debug, abra a release **debug-test** e baixe **Shopping-Lists-debug-download.zip** em **Assets**. Extraia o arquivo **Shopping-Lists-debug.apk** e abra somente o APK extraído. O ZIP contém também o SHA-256 e as instruções. Não instale o ZIP e não use o ZIP de artefatos das Actions.
+- [Ver todas as versões oficiais (Releases)](https://github.com/768ull/Shopping-List/releases)
+- [Baixar a versão oficial mais recente](https://github.com/768ull/Shopping-List/releases/latest)
 
-- [Ver todas as versões publicadas (Releases)](https://github.com/768ull/Shopping-List/releases)
-- [Baixar a versão mais recente](https://github.com/768ull/Shopping-List/releases/latest)
-
-Cada nova publicação mantém as versões anteriores na lista de Releases. Uma versão só aparece ali depois que o workflow **Build Shopping Lists APK** concluir a compilação e publicar o APK. As versões antigas que nunca tiveram um APK publicado não podem ser mostradas como downloads sem que seus respectivos arquivos sejam recuperados e compilados.
+Uma versão só estará disponível quando o workflow de distribuição concluir a compilação Release, validar a assinatura e publicar o APK.
