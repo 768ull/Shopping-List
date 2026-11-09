@@ -1,4 +1,4 @@
-name: Verify Shopping Lists Android
+name: Verify Shopping Lists Release
 
 on:
   push:
@@ -13,49 +13,18 @@ on:
       - ".github/workflows/android-verify.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: shopping-lists-debug-build
-  cancel-in-progress: false
+  group: shopping-list-release-verification
+  cancel-in-progress: true
 
 jobs:
-  debug-build:
+  release-verification:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Verify project ZIP does not contain private signing files
-        shell: bash
-        run: |
-          set -euo pipefail
-          ARCHIVE="Shopping_List_Project_com_Atualizador.zip"
-          if [[ -f "$ARCHIVE" ]]; then
-            python3 - "$ARCHIVE" <<'PY'
-          import sys
-          import zipfile
-          from pathlib import PurePosixPath
-
-          archive_path = sys.argv[1]
-          forbidden = []
-          with zipfile.ZipFile(archive_path) as archive:
-              bad = archive.testzip()
-              if bad:
-                  raise SystemExit(f"ZIP do projeto corrompido: {bad}")
-              for name in archive.namelist():
-                  path = PurePosixPath(name)
-                  lower = name.lower()
-                  if path.name.lower() == "signing.properties" or lower.endswith((".jks", ".keystore", ".p12", ".pfx")):
-                      forbidden.append(name)
-          if forbidden:
-              print("::error::O ZIP contém material de assinatura privada:")
-              for name in forbidden:
-                  print(f" - {name}")
-              raise SystemExit(1)
-          print("ZIP íntegro e sem keystore ou signing.properties.")
-          PY
-          fi
 
       - name: Install JDK 17
         uses: actions/setup-java@v4
@@ -68,46 +37,32 @@ jobs:
         with:
           packages: ''
 
-      - name: Install stable Android SDK Platform 36
+      - name: Install Android SDK Platform 36 and Build Tools
         shell: bash
         run: |
           set -euo pipefail
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
-
-      - name: Restore persistent Debug signing key
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: shopping-list-debug-keystore-v1
-
-      - name: Ensure persistent Debug signing key exists
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.android"
-          if [[ ! -s "$HOME/.android/debug.keystore" ]]; then
-            keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
-          fi
-          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
-          keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -E 'SHA1:|SHA256:'
 
       - name: Configure Gradle 9.6.0
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.6.0"
 
-      - name: Compile Debug APK
+      - name: Compile and verify optimized Release variant
         shell: bash
         run: |
           set -euo pipefail
-          gradle --no-daemon --stacktrace -p android :app:assembleDebug
-          APK="android/app/build/outputs/apk/debug/app-debug.apk"
-          test -s "$APK"
+
+          gradle --no-daemon --stacktrace -p android :app:assembleRelease
+
+          APK="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          MAPPING="android/app/build/outputs/mapping/release/mapping.txt"
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
-          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
           ZIPALIGN="$ANDROID_HOME/build-tools/36.0.0/zipalign"
+
+          test -s "$APK"
+          test -s "$MAPPING"
           test -x "$AAPT"
-          test -x "$APKSIGNER"
           test -x "$ZIPALIGN"
 
           EXPECTED_VERSION_CODE="$(grep -m1 -oE 'versionCode[[:space:]]+[0-9]+' android/app/build.gradle | grep -oE '[0-9]+')"
@@ -115,130 +70,50 @@ jobs:
           test -n "$EXPECTED_VERSION_CODE"
           test -n "$EXPECTED_VERSION_NAME"
 
-          mkdir -p verification-output
-          cp "$APK" verification-output/Shopping-Lists-debug.apk
-          "$ZIPALIGN" -c -v 4 verification-output/Shopping-Lists-debug.apk
-          unzip -tq verification-output/Shopping-Lists-debug.apk
+          BADGING="$("$AAPT" dump badging "$APK")"
+          printf '%s\\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${EXPECTED_VERSION_CODE}' versionName='${EXPECTED_VERSION_NAME}'"
+          printf '%s\\n' "$BADGING" | grep -F "sdkVersion:'30'"
+          printf '%s\\n' "$BADGING" | grep -F "targetSdkVersion:'36'"
+          printf '%s\\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
+
+          if [[ "$EXPECTED_VERSION_NAME" == *debug* ]]; then
+            echo "::error::A versão Release não pode conter a marcação debug."
+            exit 1
+          fi
+
+          MANIFEST_TREE="$("$AAPT" dump xmltree "$APK" AndroidManifest.xml)"
+          if printf '%s\\n' "$MANIFEST_TREE" | grep -Eiq 'android:debuggable.*=(true|0xffffffff)'; then
+            echo "::error::O APK Release está marcado como debuggable."
+            exit 1
+          fi
+
+          "$ZIPALIGN" -c -v 4 "$APK"
+          unzip -tq "$APK"
 
           python3 - <<'PY'
           from zipfile import ZipFile, ZIP_STORED
-          apk = "verification-output/Shopping-Lists-debug.apk"
+
+          apk = "android/app/build/outputs/apk/release/app-release-unsigned.apk"
           with ZipFile(apk) as archive:
               broken = archive.testzip()
               if broken:
                   raise SystemExit(f"APK corrompido: {broken}")
-              native = [item for item in archive.infolist() if item.filename.startswith("lib/") and item.filename.endswith(".so")]
+              native = [
+                  item for item in archive.infolist()
+                  if item.filename.startswith("lib/") and item.filename.endswith(".so")
+              ]
               if not native:
-                  raise SystemExit("APK não contém bibliotecas nativas.")
+                  raise SystemExit("APK Release não contém bibliotecas nativas.")
               stored = [item.filename for item in native if item.compress_type == ZIP_STORED]
               if stored:
-                  raise SystemExit("Bibliotecas nativas continuam sem compressão: " + ", ".join(stored[:5]))
+                  raise SystemExit(
+                      "Bibliotecas nativas continuam sem compressão: "
+                      + ", ".join(stored[:5])
+                  )
           PY
 
-          BADGING="$("$AAPT" dump badging verification-output/Shopping-Lists-debug.apk)"
-          printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist.debug' versionCode='${EXPECTED_VERSION_CODE}' versionName='${EXPECTED_VERSION_NAME}-debug'"
-          printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
-          printf '%s\n' "$BADGING" | grep -F "targetSdkVersion:'36'"
-          printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
-
-          "$APKSIGNER" verify --verbose --print-certs verification-output/Shopping-Lists-debug.apk 2>&1 | tee verification-output/signature-report.txt
-          # Keep the same V2 Debug signing mode used by the previously published APK.
-          grep -Eiq "Verified using v2 scheme.*: true" verification-output/signature-report.txt
-          grep -Fq "Signer #1 certificate SHA-256 digest: 92cc0214682fe7b5c8310703f9dc22143264baf383a95acd8775867db77949a4" verification-output/signature-report.txt
-          sha256sum verification-output/Shopping-Lists-debug.apk > verification-output/sha256.txt
-
-          python3 - <<'PY'
-          from pathlib import Path
-          from zipfile import ZIP_STORED, ZipFile
-
-          output = Path("verification-output")
-          apk = output / "Shopping-Lists-debug.apk"
-          info = output / "LEIA-ANTES-DE-INSTALAR.txt"
-          info.write_text(
-              "Este ZIP contém o APK completo do Shopping Lists para Android.\\n"
-              "1. Extraia Shopping-Lists-debug.apk para uma pasta do celular.\\n"
-              "2. Confira o arquivo sha256.txt se souber verificar SHA-256.\\n"
-              "3. Abra o APK extraído para iniciar o instalador do Android.\\n"
-              "Não tente instalar o arquivo ZIP.\\n",
-              encoding="utf-8",
-          )
-          archive_path = output / "Shopping-Lists-debug-download.zip"
-          with ZipFile(archive_path, "w", compression=ZIP_STORED) as archive:
-              archive.write(apk, arcname="Shopping-Lists-debug.apk")
-              archive.write(output / "sha256.txt", arcname="sha256.txt")
-              archive.write(info, arcname=info.name)
-          with ZipFile(archive_path) as archive:
-              broken = archive.testzip()
-              if broken:
-                  raise SystemExit(f"ZIP alternativo corrompido: {broken}")
-          PY
-          sha256sum verification-output/Shopping-Lists-debug-download.zip > verification-output/sha256-zip.txt
-
-      - name: Upload verified Debug test APK (not for release updates)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shopping-Lists-DEBUG-TEST-ONLY
-          path: verification-output/*
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Remove old Debug APK filename from test release
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if gh release view debug-test >/dev/null 2>&1; then
-            if gh release view debug-test --json assets --jq '.assets[].name' | grep -Fxq 'ShoppingList-debug.apk'; then
-              gh release delete-asset debug-test ShoppingList-debug.apk --yes
-            fi
-          fi
-
-      - name: Publish Debug APK as direct download (test only)
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: debug-test
-          target_commitish: main
-          name: APK de teste do Shopping Lists (Debug)
-          prerelease: true
-          make_latest: false
-          body: |
-            Download direto do APK de teste (Debug) do Shopping Lists.
-            Opção 1: baixe Shopping-Lists-debug-download.zip, extraia Shopping-Lists-debug.apk e só então instale.
-            Opção 2: baixe o APK diretamente, se preferir.
-
-            Requisitos: Android 11 ou mais recente e processador 64 bits (arm64-v8a).
-            A compilação verifica alinhamento ZIP, integridade do APK, checksum SHA-256 e assinatura APK V2 com o certificado Debug preservado.
-            Este APK usa o pacote br.com.shoppinglist.debug e não atualiza uma instalação Release br.com.shoppinglist.
-          files: |
-            verification-output/Shopping-Lists-debug.apk
-            verification-output/Shopping-Lists-debug-download.zip
-            verification-output/sha256.txt
-            verification-output/sha256-zip.txt
-            verification-output/signature-report.txt
-            verification-output/LEIA-ANTES-DE-INSTALAR.txt
-          overwrite_files: true
-          fail_on_unmatched_files: true
-
-      - name: Compile and verify optimized unsigned Release candidate
-        shell: bash
-        run: |
-          set -euo pipefail
-          gradle --no-daemon --stacktrace -p android :app:assembleRelease
-          APK="android/app/build/outputs/apk/release/app-release-unsigned.apk"
-          MAPPING="android/app/build/outputs/mapping/release/mapping.txt"
-          test -s "$APK"
-          test -s "$MAPPING"
-          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -v 4 "$APK"
-          unzip -tq "$APK"
-          BADGING="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK")"
-          printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='13' versionName='1.0.12'"
-          printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
-          printf '%s\n' "$BADGING" | grep -F "targetSdkVersion:'36'"
-          printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
-          echo "R8 mapping gerado: $MAPPING"
-          echo "Release otimizado compilado sem assinatura; não distribuir este APK."
+          echo "Release otimizado validado com R8."
+          echo "Pacote: br.com.shoppinglist"
+          echo "Versão: $EXPECTED_VERSION_NAME ($EXPECTED_VERSION_CODE)"
+          echo "Este job é somente uma verificação: o APK sem assinatura não é distribuído nem instalável."
           du -h "$APK"
-
