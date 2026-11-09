@@ -54,7 +54,7 @@ object ProductAiEngine {
     private const val IMAGE_MODEL_ID = "concedo/sdxs-512-tinySDdistilled-GGUF"
     private const val IMAGE_MODEL_REVISION = "3144d898d61492f8382ffcabec055733fc5b2a0e"
     private const val IMAGE_MODEL_FILE = "sdxs-512-tinySDdistilled_Q8_0.gguf"
-    private const val VECTOR_CACHE_VERSION = 3
+    private const val VECTOR_CACHE_VERSION = 4
     private const val VECTOR_DIMENSION = 768
     private const val MIN_SIMILARITY = 0.78f
     private const val GIB = 1024L * 1024L * 1024L
@@ -159,7 +159,7 @@ object ProductAiEngine {
         Candidate("impressora", "🖨️"),
         Candidate("videogame, console de jogos, controle de videogame", "🎮"),
         Candidate("fone de ouvido, headphone, headset", "🎧"),
-        Candidate("caixa de som, alto-falante", "🔊"),
+        Candidate("rádio, caixa de som portátil, alto-falante Bluetooth", "📻"),
         Candidate("câmera fotográfica, máquina fotográfica", "📷"),
         Candidate("carregador, cabo USB, plugue elétrico", "🔌"),
         Candidate("pilha, bateria", "🔋"),
