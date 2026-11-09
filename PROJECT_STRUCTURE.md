@@ -34,7 +34,7 @@ Os principais arquivos Java são:
 - `MainActivity.java`: telas e interações da lista.
 - `AppDatabase.java`: armazenamento local SQLite.
 - `ShoppingListRenderer.java`: paginação e renderização para PDF/PNG.
-- `EmojiCatalog.java`: catálogo local de emojis.
+- `EmojiCatalog.java`: catálogo local de emojis.\n- `StickerCatalog.java`: adesivos gráficos locais para produtos sem emoji.\n- `assets/emoji/`: inventário Unicode Emoji 18.0, nomes em português e licença.
 - `UpdateConfig.java` e `UpdateManager.java`: consulta e instalação assistida de atualizações.
 - `ApkFileProvider.java`: entrega segura do APK ao instalador Android.
 
