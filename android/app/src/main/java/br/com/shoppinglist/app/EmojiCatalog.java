@@ -32,7 +32,7 @@ public final class EmojiCatalog {
 
     private static final String[][] RULES = {
         {"papel higienico|papel toalha|guardanapo", "🧻"},
-        {"creme de leite|leite condensado|leite em po|leite|iogurte", "🥛"},
+        {"creme de leite|leite condensado|leite em po|leite|iogurte", "🥛"},\n        {"manteiga|margarina", "🧈"},
         {"feijao preto|feijao carioca|feijao branco|feijao|lentilha", "🫘"},
         {"arroz integral|arroz branco|arroz", "🍚"},
         {"maca verde|maca", "🍎"}, {"banana", "🍌"}, {"uva", "🍇"},
