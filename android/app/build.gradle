@@ -2,6 +2,11 @@ plugins {
     id 'com.android.application'
 }
 
+// Local Release signing is optional for CI verification. Distribution builds
+// receive this file from GitHub Actions Secrets and are signed with the private key.
+def releaseSigningPropertiesFile = rootProject.file('signing/signing.properties')
+def releaseSigningConfigured = releaseSigningPropertiesFile.exists()
+
 android {
     namespace 'br.com.shoppinglist.app'
     compileSdk 36
@@ -19,10 +24,9 @@ android {
 
     signingConfigs {
         release {
-            def props = new java.util.Properties()
-            def propsFile = rootProject.file('signing/signing.properties')
-            if (propsFile.exists()) {
-                propsFile.withInputStream { props.load(it) }
+            if (releaseSigningConfigured) {
+                def props = new java.util.Properties()
+                releaseSigningPropertiesFile.withInputStream { props.load(it) }
                 storeFile rootProject.file("signing/${props.getProperty('storeFile', 'shopping-list-release.jks')}")
                 storePassword props.getProperty('storePassword')
                 keyAlias props.getProperty('keyAlias', 'shoppinglist')
@@ -41,8 +45,15 @@ android {
             versionNameSuffix '-debug'
         }
         release {
-            minifyEnabled false
-            signingConfig signingConfigs.release
+            // AGP 9.3+ enables R8 code optimization and resource shrinking together.
+            optimization {
+                enable = true
+            }
+            // The unsigned Release variant is built in CI to test R8 before the
+            // private distribution key is configured. Real releases are signed.
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
