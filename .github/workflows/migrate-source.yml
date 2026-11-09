@@ -1,0 +1,114 @@
+name: Migrate Shopping List source into repository
+
+on:
+  push:
+    paths:
+      - ".github/workflows/migrate-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract source and remove exposed signing material
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib
+          import shutil
+          import zipfile
+
+          repo = pathlib.Path.cwd()
+          archive = repo / "Shopping_List_Project_com_Atualizador.zip"
+          extracted = repo / "_migration_tmp"
+          destination = repo / "android"
+
+          if not archive.is_file():
+              raise SystemExit("Arquivo ZIP original não encontrado.")
+          with zipfile.ZipFile(archive) as zf:
+              bad = zf.testzip()
+              if bad:
+                  raise SystemExit(f"ZIP corrompido no item: {bad}")
+              names = zf.namelist()
+              if not any(n.startswith("ShoppingListProject/app/build.gradle") for n in names):
+                  raise SystemExit("Não encontrei o módulo app no ZIP esperado.")
+
+              for info in zf.infolist():
+                  p = pathlib.PurePosixPath(info.filename)
+                  if p.is_absolute() or ".." in p.parts:
+                      raise SystemExit(f"Caminho inseguro no ZIP: {info.filename}")
+              zf.extractall(extracted)
+
+          source = extracted / "ShoppingListProject"
+          if not source.is_dir():
+              raise SystemExit("Pasta ShoppingListProject não foi extraída.")
+
+          if destination.exists():
+              shutil.rmtree(destination)
+          shutil.copytree(
+              source,
+              destination,
+              ignore=shutil.ignore_patterns(
+                  "signing", ".gradle", "build", "local.properties", ".DS_Store"
+              ),
+          )
+
+          gitignore = destination / ".gitignore"
+          rules = [
+              ".gradle/",
+              ".idea/",
+              "local.properties",
+              "**/build/",
+              "*.iml",
+              "signing/",
+              ".DS_Store",
+              "*.jks",
+              "*.keystore",
+          ]
+          gitignore.write_text("\n".join(rules) + "\n", encoding="utf-8")
+
+          # Recria o ZIP público sem keystores ou arquivos de senha.
+          temp_zip = repo / "Shopping_List_Project_com_Atualizador.cleaned.zip"
+          with zipfile.ZipFile(temp_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+              for file in sorted(source.rglob("*")):
+                  if not file.is_file():
+                      continue
+                  rel = file.relative_to(extracted)
+                  parts = rel.parts
+                  if "signing" in parts:
+                      continue
+                  if file.name in {"local.properties"} or ".gradle" in parts or "build" in parts:
+                      continue
+                  zf.write(file, rel.as_posix())
+          temp_zip.replace(archive)
+
+          shutil.rmtree(extracted)
+          print("Estrutura android/ criada.")
+          print("ZIP público recriado sem keystore nem signing.properties.")
+          print("Arquivos migrados:")
+          for file in sorted(destination.rglob("*")):
+              if file.is_file():
+                  print(f"{file.relative_to(repo)} | {file.stat().st_size} bytes")
+          PY
+
+      - name: Commit migrated project
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android Shopping_List_Project_com_Atualizador.zip
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração de migração."
+            exit 0
+          fi
+          git commit -m "Migra fontes Android para estrutura navegável e remove chave exposta"
+          git push origin HEAD:main
