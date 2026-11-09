@@ -59,12 +59,18 @@ public final class EmojiCatalogUpdater {
             String remoteVersion = manifest.optString("unicodeVersion", "");
             String remoteSha = manifest.optString("sha256", "").toLowerCase();
             int remoteCount = manifest.optInt("emojiCount", 0);
-            if (remoteVersion.isEmpty() || remoteSha.length() != 64 || remoteCount < 1) return;
+            int remoteSchema = manifest.optInt("catalogSchema", 0);
+            String catalogType = manifest.optString("catalogType", "");
+            if (remoteVersion.isEmpty() || remoteSha.length() != 64 || remoteCount < 1
+                    || remoteSchema != EmojiCatalog.CATALOG_SCHEMA
+                    || !"shopping-products".equals(catalogType)) return;
 
             String localVersion = prefs.getString("version", EmojiCatalog.UNICODE_VERSION);
             String localSha = prefs.getString("sha256", "").toLowerCase();
+            int localSchema = prefs.getInt("catalog_schema", 0);
             int versionOrder = compareVersions(remoteVersion, localVersion);
-            if (versionOrder < 0 || (versionOrder == 0 && remoteSha.equals(localSha))) return;
+            if (versionOrder < 0 || (versionOrder == 0 && remoteSha.equals(localSha)
+                    && localSchema == remoteSchema)) return;
 
             byte[] catalog = download(BASE_URL + "emoji_catalog_pt.tsv", MAX_CATALOG_BYTES);
             if (catalog.length < 1000 || !sha256(catalog).equals(remoteSha)) return;
@@ -91,6 +97,7 @@ public final class EmojiCatalogUpdater {
                     .putString("version", remoteVersion)
                     .putString("sha256", remoteSha)
                     .putInt("count", rows)
+                    .putInt("catalog_schema", remoteSchema)
                     .apply();
             EmojiCatalog.invalidate();
         } catch (Exception ignored) {
