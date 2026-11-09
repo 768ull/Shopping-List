@@ -111,4 +111,22 @@ jobs:
             exit 0
           fi
           git commit -m "Migra fontes Android para estrutura navegável e remove chave exposta"
-          git push origin HEAD:main
+
+          # Outros commits podem entrar em main enquanto o ZIP é extraído.
+          # Rebaseia a migração sobre a ponta atual sem forçar nem sobrescrever a branch.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "::error::Conflito ao sincronizar a migração com main. Nenhum commit remoto foi sobrescrito."
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              echo "Migração sincronizada e enviada para main."
+              exit 0
+            fi
+            echo "A branch avançou durante o envio (tentativa $attempt). Repetindo a sincronização."
+          done
+
+          echo "::error::Não foi possível enviar a migração após três tentativas."
+          exit 1
