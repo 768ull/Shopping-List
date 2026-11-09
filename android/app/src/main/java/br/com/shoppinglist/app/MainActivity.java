@@ -549,10 +549,6 @@ public class MainActivity extends android.app.Activity {
             if (!product.equals(currentText)) return;
             if (!StickerCatalog.isSticker(item.emoji)) return;
 
-            item.emoji = "🧠";
-            database.setItemEmoji(item.id, item.emoji, false);
-            renderSticker(sticker, item.emoji);
-
             WeakReference<MainActivity> activityRef = new WeakReference<>(this);
             WeakReference<EditText> inputRef = new WeakReference<>(input);
             WeakReference<TextView> stickerRef = new WeakReference<>(sticker);
@@ -565,11 +561,6 @@ public class MainActivity extends android.app.Activity {
                     String current = editor.getText() == null ? "" : editor.getText().toString().trim();
                     if (!product.equals(current) || item.emojiManual) return;
                     target.setContentDescription(message);
-                    if (message.toLowerCase(Locale.ROOT).contains("criando adesivo")
-                            || message.toLowerCase(Locale.ROOT).contains("baixando ia de imagens")) {
-                        target.setText("🎨");
-                        target.setCompoundDrawables(null, null, null, null);
-                    }
                 }
 
                 @Override public void onResult(String result) {
@@ -639,7 +630,7 @@ public class MainActivity extends android.app.Activity {
             view.setBackground(roundDrawable(custom.background, dp(12), Color.rgb(232, 215, 183), dp(1)));
             view.setContentDescription(custom.title);
         } else {
-            view.setText(value == null || value.isEmpty() ? "🛒" : value);
+            view.setText(value == null || value.isEmpty() ? "?" : value);
             view.setTextSize(25);
             view.setTextColor(INK);
             view.setTypeface(Typeface.DEFAULT);
@@ -648,6 +639,7 @@ public class MainActivity extends android.app.Activity {
     }
 
     private void showEmojiPicker(AppDatabase.ShoppingItem item, TextView sticker) {
+        EmojiCatalog.preload(this, null);
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
@@ -656,14 +648,14 @@ public class MainActivity extends android.app.Activity {
         outer.setPadding(dp(14), dp(14), dp(14), dp(14));
         outer.setBackground(roundDrawable(PAPER, dp(20), Color.rgb(234, 210, 159), dp(1)));
 
-        TextView heading = label("Escolha um emoji ou adesivo", 18, INK, true);
+        TextView heading = label("Escolha um ícone de produto", 18, INK, true);
         heading.setPadding(0, 0, 0, dp(4));
         outer.addView(heading);
 
         int emojiCount = EmojiCatalogUpdater.getEmojiCount(this);
         TextView catalogInfo = label(
-                emojiCount + " emojis Unicode " + EmojiCatalogUpdater.getUnicodeVersion(this)
-                        + " • catálogo local com atualização automática",
+                emojiCount + " emojis de produtos • Unicode " + EmojiCatalogUpdater.getUnicodeVersion(this)
+                        + " • catálogo filtrado e atualizado automaticamente",
                 10, MUTED, false);
         catalogInfo.setPadding(0, 0, 0, dp(10));
         outer.addView(catalogInfo);
@@ -679,11 +671,70 @@ public class MainActivity extends android.app.Activity {
                 Color.rgb(238, 218, 178), dp(1)));
         outer.addView(search);
 
+        TextView keyboardHelp = label(
+                "Também pode inserir um emoji pelo Gboard, SwiftKey ou outro teclado Android.",
+                10, MUTED, false);
+        keyboardHelp.setPadding(dp(2), dp(7), 0, dp(3));
+        outer.addView(keyboardHelp);
+
+        EditText keyboardEmoji = new EditText(this);
+        keyboardEmoji.setSingleLine(true);
+        keyboardEmoji.setTextSize(14);
+        keyboardEmoji.setTextColor(INK);
+        keyboardEmoji.setHintTextColor(MUTED);
+        keyboardEmoji.setHint("Toque aqui e escolha um emoji no teclado");
+        keyboardEmoji.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        keyboardEmoji.setPadding(dp(12), dp(8), dp(12), dp(8));
+        keyboardEmoji.setBackground(roundDrawable(Color.rgb(255, 250, 235), dp(12),
+                Color.rgb(238, 218, 178), dp(1)));
+        outer.addView(keyboardEmoji);
+
+        LinearLayout keyboardActions = new LinearLayout(this);
+        keyboardActions.setOrientation(LinearLayout.HORIZONTAL);
+        keyboardActions.setPadding(0, dp(5), 0, dp(3));
+        TextView chooseKeyboard = action("TROCAR TECLADO", INK, BG_YELLOW_LIGHT, 11, true);
+        chooseKeyboard.setGravity(Gravity.CENTER);
+        chooseKeyboard.setPadding(dp(8), dp(10), dp(8), dp(10));
+        chooseKeyboard.setBackground(roundDrawable(BG_YELLOW_LIGHT, dp(10),
+                Color.rgb(240, 213, 145), dp(1)));
+        TextView useKeyboardEmoji = action("VALIDAR EMOJI", Color.WHITE, ORANGE, 11, true);
+        useKeyboardEmoji.setGravity(Gravity.CENTER);
+        useKeyboardEmoji.setPadding(dp(8), dp(10), dp(8), dp(10));
+        useKeyboardEmoji.setBackground(roundDrawable(ORANGE, dp(10), 0, 0));
+        keyboardActions.addView(chooseKeyboard, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        LinearLayout.LayoutParams useKeyboardParams = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        useKeyboardParams.leftMargin = dp(7);
+        keyboardActions.addView(useKeyboardEmoji, useKeyboardParams);
+        outer.addView(keyboardActions);
+
+        chooseKeyboard.setOnClickListener(v -> {
+            keyboardEmoji.requestFocus();
+            InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (manager != null) manager.showInputMethodPicker();
+        });
+        useKeyboardEmoji.setOnClickListener(v -> {
+            String selected = EmojiCatalog.matchProductEmoji(this, keyboardEmoji.getText());
+            if (selected == null) {
+                Toast.makeText(this,
+                        "Esse emoji não está no catálogo de produtos. Escolha um alimento, objeto ou outro item comprável.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+            item.emoji = selected;
+            item.emojiManual = true;
+            database.setItemEmoji(item.id, selected, true);
+            renderSticker(sticker, selected);
+            dialog.dismiss();
+        });
+
         LinearLayout tabs = new LinearLayout(this);
         tabs.setOrientation(LinearLayout.HORIZONTAL);
         tabs.setGravity(Gravity.CENTER);
         tabs.setPadding(0, dp(9), 0, dp(8));
-        TextView emojiTab = action("😀  EMOJIS", Color.WHITE, ORANGE, 12, true);
+        TextView emojiTab = action("PRODUTOS", Color.WHITE, ORANGE, 12, true);
         emojiTab.setGravity(Gravity.CENTER);
         emojiTab.setPadding(dp(12), dp(10), dp(12), dp(10));
         emojiTab.setBackground(roundDrawable(ORANGE, dp(12), 0, 0));
@@ -699,7 +750,7 @@ public class MainActivity extends android.app.Activity {
         tabs.addView(stickerTab, stickerTabParams);
         outer.addView(tabs);
 
-        TextView resultInfo = label("Seleção rápida. Digite para pesquisar em todo o catálogo.", 10, MUTED, false);
+        TextView resultInfo = label("Seleção rápida de produtos. Digite para pesquisar.", 10, MUTED, false);
         resultInfo.setPadding(dp(2), 0, 0, dp(5));
         outer.addView(resultInfo);
 
@@ -721,6 +772,9 @@ public class MainActivity extends android.app.Activity {
             if (showingStickers[0]) {
                 grid.setColumnCount(4);
                 search.setVisibility(View.GONE);
+                keyboardHelp.setVisibility(View.GONE);
+                keyboardEmoji.setVisibility(View.GONE);
+                keyboardActions.setVisibility(View.GONE);
                 resultInfo.setText("Adesivos próprios por categoria. Não dependem de fontes de emoji.");
                 for (StickerCatalog.Sticker custom : StickerCatalog.all()) {
                     LinearLayout tile = new LinearLayout(this);
@@ -748,6 +802,9 @@ public class MainActivity extends android.app.Activity {
             } else {
                 grid.setColumnCount(5);
                 search.setVisibility(View.VISIBLE);
+                keyboardHelp.setVisibility(View.VISIBLE);
+                keyboardEmoji.setVisibility(View.VISIBLE);
+                keyboardActions.setVisibility(View.VISIBLE);
                 String query = search.getText() == null ? "" : search.getText().toString().trim();
                 if (!query.isEmpty() && !EmojiCatalog.isLoaded()) {
                     resultInfo.setText("Preparando a pesquisa de " + emojiCount + " emojis...");
@@ -767,8 +824,8 @@ public class MainActivity extends android.app.Activity {
                         ? EmojiCatalog.quick(this)
                         : EmojiCatalog.search(this, query, 80);
                 resultInfo.setText(query.isEmpty()
-                        ? "Seleção rápida • " + emojiCount + " emojis disponíveis para pesquisa."
-                        : matches.size() + " resultado(s) • pesquisando nomes em português.");
+                        ? "Seleção rápida • " + emojiCount + " emojis de produtos disponíveis."
+                        : matches.size() + " produto(s) encontrados pelo nome.");
                 if (matches.isEmpty()) {
                     TextView empty = label("Nenhum emoji encontrado. Experimente outra palavra ou abra Adesivos.", 13, MUTED, false);
                     empty.setGravity(Gravity.CENTER);
