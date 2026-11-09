@@ -102,16 +102,18 @@ public final class StickerCatalog {
             return "sticker:LIMPEZA";
         }
         if (hasAny(s, "agua mineral", "agua com gas", "agua sem gas", "agua potavel",
-                "garrafa de agua", "agua natural")) return "sticker:AGUA";
+                "garrafa de agua", "agua natural", "bonafont", "minalba", "crystal", "indaia",
+                "sao lourenco", "perrier", "evian")) return "sticker:AGUA";
         if (hasAny(s, "agua de coco", "suco de coco")) return "sticker:SUCO";
-        if (hasAny(s, "suco", "nectar", "refresco", "polpa de fruta", "bebida de fruta")) {
+        if (hasAny(s, "suco", "nectar", "refresco", "polpa de fruta", "bebida de fruta",
+                "tang", "fresh", "mid", "del valle", "maguary", "dafruta", "kapo")) {
             return "sticker:SUCO";
         }
         if (hasAny(s, "coca cola", "coca-cola", "coca", "pepsi", "guarana",
                 "guarana antarctica", "guarana antartica", "fanta", "sprite", "7 up",
                 "schweppes", "soda", "refrigerante", "refri", "agua tonica",
-                "tonica", "energetico", "red bull", "monster energy", "gatorade",
-                "powerade", "isotonico", "bebida gaseificada", "bebida energetica")) {
+                "tonica", "energetico", "red bull", "monster", "baly", "tnt", "fusion",
+                "gatorade", "powerade", "isotonico", "bebida gaseificada", "bebida energetica")) {
             return "sticker:REFRIGERANTE";
         }
         if (hasAny(s, "cerveja", "pilsen", "lager", "ipa", "long neck", "chopp", "chope")) {
@@ -127,7 +129,8 @@ public final class StickerCatalog {
         if (hasAny(s, "cha", "cha gelado", "cha mate", "mate", "infusao")) {
             return "sticker:CHA";
         }
-        if (hasAny(s, "leite", "achocolatado", "nescau", "toddy", "yakult",
+        if (hasAny(s, "leite", "achocolatado", "nescau", "toddy", "yakult", "ninho",
+                "itambe", "piracanjuba", "parmalat", "italac", "activia", "danone",
                 "leite fermentado", "bebida lactea", "iogurte liquido", "leite vegetal")) {
             return "sticker:LEITE";
         }
