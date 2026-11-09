@@ -22,6 +22,7 @@ Shopping-List/
 ├── CONFIGURAR_APK_E_ATUALIZACOES.md
 ├── PROJECT_STRUCTURE.md
 ├── README.md
+├── Shopping_List_Project_com_Atualizador.zip
 └── update.json
 ```
 
