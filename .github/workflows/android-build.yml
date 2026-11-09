@@ -69,6 +69,19 @@ jobs:
           name = os.environ["VERSION_NAME"]
           if code < 1 or not re.fullmatch(r"[0-9A-Za-z._+-]{1,40}", name):
               raise SystemExit("Número ou nome de versão inválido.")
+
+          # Permite a primeira publicação quando o manifesto ainda não possui APK.
+          manifest_path = pathlib.Path.cwd() / "update.json"
+          if manifest_path.is_file():
+              import json
+              manifest = json.loads(manifest_path.read_text())
+              current_code = int(manifest.get("versionCode", 0))
+              has_published_apk = bool(str(manifest.get("apkUrl", "")).strip())
+              if has_published_apk and code <= current_code:
+                  raise SystemExit(
+                      f"version_code precisa ser maior que a versão publicada ({current_code})."
+                  )
+
           source, count_code = re.subn(r"versionCode\s+\d+", f"versionCode {code}", source, count=1)
           source, count_name = re.subn(r"versionName\s+['\"][^'\"]+['\"]", "versionName '" + name + "'", source, count=1)
           if count_code != 1 or count_name != 1:
@@ -139,13 +152,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -f update.json ]]; then
-            CURRENT_CODE="$(python3 -c 'import json; print(json.load(open("update.json")).get("versionCode", 0))')"
-            if (( VERSION_CODE <= CURRENT_CODE )); then
-              echo "::error::version_code precisa ser maior que a versão publicada ($CURRENT_CODE)."
-              exit 1
-            fi
-          fi
           SHA256="$(cat release-files/sha256.txt)"
           APK_URL="https://github.com/$REPOSITORY/releases/download/v$VERSION_NAME/ShoppingList.apk"
           python3 - <<'PY'
