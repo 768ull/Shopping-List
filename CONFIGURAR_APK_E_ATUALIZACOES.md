@@ -4,7 +4,7 @@
 
 O projeto Android está na pasta `android/`. Abra essa pasta no Android Studio. O módulo principal é `android/app`, com namespace `br.com.shoppinglist.app` e identificador instalado `br.com.shoppinglist`.
 
-A cópia ZIP antiga não está na branch `main` atual. A pasta `android/` é a fonte principal. O antigo ZIP continha a chave privada Release, que foi exposta no histórico público; essa chave deve ser tratada como comprometida.
+O arquivo `Shopping_List_Project_com_Atualizador.zip` permanece como cópia auxiliar do projeto; a pasta `android/` é a fonte principal. A cópia atual foi limpa, mas o keystore antigo apareceu em commits históricos públicos e deve ser tratado como comprometido.
 
 ## Ambiente de compilação
 
