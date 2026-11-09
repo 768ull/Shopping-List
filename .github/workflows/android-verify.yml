@@ -139,8 +139,8 @@ jobs:
           printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
 
           "$APKSIGNER" verify --verbose --print-certs verification-output/Shopping-Lists-debug.apk 2>&1 | tee verification-output/signature-report.txt
-          grep -Eiq "Verified using v1 scheme.*: true" verification-output/signature-report.txt
-          grep -Eiq "Verified using v2 scheme.*: true" verification-output/signature-report.txt
+          # The Android Gradle Plugin may choose the highest enabled compatible
+          # signature scheme. The device minimum is Android 11, so V3 is valid.
           grep -Eiq "Verified using v3 scheme.*: true" verification-output/signature-report.txt
           sha256sum verification-output/Shopping-Lists-debug.apk > verification-output/sha256.txt
 
@@ -207,7 +207,7 @@ jobs:
             Opção 2: baixe o APK diretamente, se preferir.
 
             Requisitos: Android 11 ou mais recente e processador 64 bits (arm64-v8a).
-            A compilação verifica integridade ZIP, checksum SHA-256 e assinaturas V1/V2/V3.
+            A compilação verifica integridade ZIP, checksum SHA-256 e assinatura APK V3.
             Este APK usa o pacote br.com.shoppinglist.debug e não atualiza uma instalação Release br.com.shoppinglist.
           files: |
             verification-output/Shopping-Lists-debug.apk
