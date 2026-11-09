@@ -73,11 +73,11 @@ public final class StickerCatalog {
         if (s.isEmpty()) return ITEMS[0].value();
         if (hasAny(s, "detergente", "desinfetante", "agua sanitaria", "agua sanitaria", "agua sanitaria",
                 "limpador", "desengordurante", "amaciante", "sabao em po", "sabao liquido",
-                "alvejante", "vassoura", "rodo", "balde", "pano de chao", "saco de lixo", "inseticida"))
+                "alvejante", "amaciante", "lustra moveis", "limpa vidro", "cera", "polidor", "vassoura", "rodo", "balde", "pano de chao", "pano de limpeza", "saco de lixo", "inseticida", "luva de limpeza", "escova de limpeza"))
             return "sticker:LIMPEZA";
         if (hasAny(s, "celular", "telefone", "smartphone", "televisao", "tv", "computador",
                 "notebook", "laptop", "tablet", "mouse", "teclado", "carregador", "cabo usb",
-                "tomada", "fone", "headphone", "caixa de som", "camera", "roteador", "console",
+                "tomada", "fone", "headphone", "caixa de som", "camera", "roteador", "console", "cabo hdmi", "controle remoto", "webcam", "microfone", "smartwatch", "monitor", "capinha de celular", "pelicula de celular", "cartao de memoria",
                 "video game", "controle", "pilha", "bateria", "pendrive", "memoria", "hd externo"))
             return "sticker:ELETRONICO";
         if (hasAny(s, "camiseta", "calca", "bermuda", "vestido", "saia", "blusa", "camisa",
@@ -86,7 +86,7 @@ public final class StickerCatalog {
             return "sticker:ROUPA";
         if (hasAny(s, "shampoo", "xampu", "condicionador", "creme dental", "pasta de dente",
                 "escova de dente", "fio dental", "desodorante", "perfume", "hidratante",
-                "protetor solar", "maquiagem", "batom", "esmalte", "sabonete", "absorvente",
+                "protetor solar", "maquiagem", "batom", "esmalte", "sabonete", "absorvente", "pente", "escova de cabelo", "pinça", "algodao", "acetona", "lixa de unha", "removedor de esmalte",
                 "fralda", "barbeador", "lamina de barbear"))
             return "sticker:BELEZA";
         if (hasAny(s, "caderno", "lapis", "caneta", "borracha escolar", "apontador", "marca texto",
