@@ -1,0 +1,17 @@
+# Android and Gradle local state
+.gradle/
+.idea/
+local.properties
+**/build/
+*.iml
+.DS_Store
+
+# Never commit private signing credentials
+signing/
+**/signing/
+signing.properties
+**/signing.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
