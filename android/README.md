@@ -68,14 +68,14 @@ O artefato do workflow `Verify Shopping Lists Android` é somente um APK de test
 
 Não distribua esse artefato como atualização Release. Para atualizações de usuários, use o workflow `Build Shopping Lists APK`, com identificador `br.com.shoppinglist` e a mesma chave privada Release protegida nos Actions Secrets.
 
-O APK de teste é publicado como download direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test): toque no arquivo `ShoppingList-debug.apk` em **Assets**. Não baixe o ZIP de artefatos das Actions no celular; downloads grandes de artefatos costumam chegar corrompidos e o APK extraído faz o Android exibir "Ocorreu um problema ao analisar o pacote" na instalação.
+O APK de teste é publicado como download direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test): toque no arquivo `Shopping-Lists-debug.apk` em **Assets**. Não baixe o ZIP de artefatos das Actions no celular; downloads grandes de artefatos costumam chegar corrompidos e o APK extraído faz o Android exibir "Ocorreu um problema ao analisar o pacote" na instalação.
 
 O primeiro APK Debug (run 42650212939) entregue antes da criação do cache foi assinado com uma chave temporária do runner, que não foi guardada. Não é possível gerar outra APK que atualize aquela instalação sem a chave privada original; o Android exige que o certificado de assinatura corresponda. A correção do cache evita que esse problema volte a acontecer nas próximas compilações Debug, mas não recupera a primeira chave perdida.
 
 ## Baixar pelo aplicativo GitHub no Android
 
-As versões instaláveis são publicadas em [Releases](https://github.com/768ull/Shopping-List/releases). No GitHub Mobile, abra o repositório → **Releases** → escolha a versão → **Assets** → **ShoppingList.apk**. O ZIP de **Code → Download ZIP** é apenas o código-fonte.
+As versões instaláveis são publicadas em [Releases](https://github.com/768ull/Shopping-List/releases). No GitHub Mobile, abra o repositório → **Releases** → escolha a versão → **Assets** → **Shopping-Lists.apk**. O ZIP de **Code → Download ZIP** é apenas o código-fonte.
 
-Para o APK de teste Debug, abra a release **debug-test** e toque diretamente em **ShoppingList-debug.apk** em **Assets**. Evite o ZIP de artefatos das Actions no celular: o download pode chegar truncado e o Android mostra "Ocorreu um problema ao analisar o pacote" ao instalar o APK extraído.
+Para o APK de teste Debug, abra a release **debug-test** e toque diretamente em **Shopping-Lists-debug.apk** em **Assets**. Evite o ZIP de artefatos das Actions no celular: o download pode chegar truncado e o Android mostra "Ocorreu um problema ao analisar o pacote" ao instalar o APK extraído.
 
 Cada versão nova fica como uma Release separada e as anteriores continuam disponíveis. A publicação depende de uma execução concluída do workflow **Build Shopping Lists APK** e dos quatro Secrets privados de assinatura indicados acima. Se uma versão antiga nunca teve APK publicado, ela não pode ser baixada retroativamente sem recuperar aquele build.
