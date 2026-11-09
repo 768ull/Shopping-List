@@ -22,7 +22,8 @@ import java.util.Locale;
  */
 public final class EmojiCatalog {
     public static final String UNICODE_VERSION = "18.0";
-    public static final int TOTAL_EMOJI_COUNT = 3963;
+    public static final int CATALOG_SCHEMA = 1;
+    public static final int TOTAL_EMOJI_COUNT = 412;
     private static volatile List<EmojiEntry> cachedAll;
     private static volatile boolean loading;
     private static final Object LOAD_LOCK = new Object();
@@ -110,16 +111,20 @@ public final class EmojiCatalog {
     };
 
     private static final String[] QUICK = {
-        "🍎","🍌","🍇","🍓","🍊","🍉","🍍","🥭","🍐","🍋","🥑","🍅",
-        "🥕","🥔","🍠","🧅","🧄","🥦","🥬","🌽","🥒","🫑","🌶️","🍄",
-        "🍞","🥐","🧀","🥚","🥛","🫘","🧈","🥓","🥩","🍗","🐟","🍤",
-        "🍚","🍝","🍜","🥫","🧂","🍪","🍫","🍬","🍯","🍰","🍦","🍕",
-        "🍔","🍟","🍿","🧃","🥤","☕","🍵","🧻","🧼","🧽","🧹","🪣",
-        "🧴","🪥","🧺","🛒","📦","🐶","🐱","🐾","🌿","🪴","📱","📺",
-        "💻","🖱️","⌨️","🖨️","🎮","🎧","🔊","📷","🔌","🔋","💡","⌚",
-        "👕","👖","👗","👟","🧦","🎒","✏️","🖊️","📓","📚","✂️","🔨",
-        "🪛","🔧","🪚","📏","🚽","🚿","🛁","🛏️","🪑","🎁","🔑","🚗",
-        "🏍️","🚲","🛞","⚽","🧸","💊","🩹","🧯","🪜","🪟","🛠️","🏷️"
+        "🍎","🍏","🍐","🍑","🍒","🍓","🫐","🥝","🍇","🍈","🍉","🍊","🍋","🍌","🍍","🥭","🥥",
+        "🥑","🍆","🥔","🥕","🌽","🌶️","🫑","🥒","🥬","🥦","🧄","🧅","🥜","🫘","🌰","🍄","🫚","🫛","🍅",
+        "🍞","🥐","🥖","🫓","🥨","🥯","🥞","🧇","🧀","🥚","🥓","🥩","🍗","🍖","🌭","🍔","🍟","🍕",
+        "🥪","🥙","🌮","🌯","🫔","🥗","🥘","🫕","🍝","🍜","🍲","🍛","🍣","🍱","🥟","🍤","🦀","🦞","🦐","🦑","🐟","🦪",
+        "🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🍫","🍬","🍭","🍯","🥛","🧈","🧂","🥫","🫙",
+        "🧃","🥤","🧋","🍵","☕","🍶","🍺","🍷","🥃","💐","🌹","🌺","🌻","🌷","🪴","🌱","🌵",
+        "🧻","🧼","🧽","🧹","🪣","🧴","🪥","🧺","🧯","🪜",
+        "📱","📞","📟","📠","💻","🖥️","🖨️","⌨️","🖱️","🖲️","💽","🔌","🔋","📷","📸","📹","🎥","📺","🎧","🎙️","🎤","🔊",
+        "👓","🕶️","👕","👖","👗","🥻","🩱","🩲","🩳","👟","🥾","👞","🥿","🧦","🧤","🧣","🧥","🧢","🎒","🧳","💍","💄","👜","👛","👝",
+        "✏️","🖊️","🖋️","✒️","📓","📚","📒","📔","📖","📕","📗","📘","📙","📎","🖇️","✂️","📏","📐","📌",
+        "🔨","🪓","⛏️","🛠️","🪛","🔧","🔩","🗜️","🪚","🧰","🔑","🔒","🔓",
+        "🚪","🪞","🪟","🛏️","🛋️","🪑","🚽","🪠","🚿","🛁","🪤","🪒",
+        "💉","💊","🩹","🩼","🩺","🚗","🏍️","🛵","🚲","🛹","🛼","🛴","🛞","🦽",
+        "⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🎱","🏓","🏸","🥅","🎮","🎲","🧩","🧸","🪆","🪀","🦴","🎁","📦"
     };
 
     private EmojiCatalog() {}
@@ -135,8 +140,11 @@ public final class EmojiCatalog {
             if (cachedAll != null) return cachedAll;
             List<EmojiEntry> result = new ArrayList<>();
             File downloaded = new File(context.getFilesDir(), "emoji_catalog_pt.tsv");
+            boolean downloadedCatalogIsCurrent = context
+                    .getSharedPreferences("emoji_catalog_updates", Context.MODE_PRIVATE)
+                    .getInt("catalog_schema", 0) == CATALOG_SCHEMA;
             try {
-                InputStream source = downloaded.isFile() && downloaded.length() > 0
+                InputStream source = downloadedCatalogIsCurrent && downloaded.isFile() && downloaded.length() > 0
                         ? new FileInputStream(downloaded)
                         : context.getAssets().open("emoji/emoji_catalog_pt.tsv");
                 try (InputStream input = source;
@@ -214,7 +222,18 @@ public final class EmojiCatalog {
         return result;
     }
 
-    /** Searches the cached Unicode catalog without disk access or repeated normalization. */
+    /** Accepts a single emoji inserted by any Android keyboard, but only if it is a product entry. */
+    public static String matchProductEmoji(Context context, CharSequence rawValue) {
+        if (rawValue == null) return null;
+        String selected = rawValue.toString().trim();
+        if (selected.isEmpty()) return null;
+        for (EmojiEntry entry : all(context)) {
+            if (entry.emoji.equals(selected)) return entry.emoji;
+        }
+        return null;
+    }
+
+    /** Searches the cached product-only Unicode catalog without disk access or repeated normalization. */
     public static List<EmojiEntry> search(Context context, String query, int limit) {
         String q = normalize(query);
         List<EmojiEntry> source = cachedAll;
@@ -258,7 +277,7 @@ public final class EmojiCatalog {
     /** Lightweight on-device product recognition: synonyms + accents + one/two-letter typo tolerance. */
     public static String automatic(String value) {
         String s = normalize(value);
-        if (s.isEmpty()) return "🛒";
+        if (s.isEmpty()) return StickerCatalog.PREFIX + "OUTRO";
         for (String[] rule : RULES) {
             for (String term : rule[0].split("\\|")) {
                 String normalizedTerm = normalize(term);
