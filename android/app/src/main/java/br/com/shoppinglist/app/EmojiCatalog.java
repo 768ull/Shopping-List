@@ -41,6 +41,8 @@ public final class EmojiCatalog {
     }
 
     private static final String[][] RULES = {
+        // Produtos de limpeza precisam ser reconhecidos antes de qualquer regra de água/bebida.
+        {"agua sanitaria|cloro|desinfetante|alvejante|detergente", "🧴"},
         {"papel higienico|papel toalha|guardanapo", "🧻"},
         {"creme de leite|leite condensado|leite em po|leite|iogurte", "🥛"},
         {"manteiga|margarina", "🧈"},
@@ -69,8 +71,12 @@ public final class EmojiCatalog {
         {"chocolate|bombom", "🍫"}, {"bala|pirulito", "🍬"},
         {"bolo|torta|doce", "🍰"}, {"sorvete", "🍦"}, {"pizza", "🍕"},
         {"hamburguer", "🍔"}, {"batata frita", "🍟"}, {"pipoca", "🍿"},
-        {"suco|refresco", "🧃"}, {"refrigerante|agua mineral|agua|refri", "🥤"},
-        {"cafe em po|cafe", "☕"}, {"cha", "🍵"},
+        {"suco|suco natural|suco integral|suco de caixinha|nectar|refresco|polpa de fruta", "🧃"},
+        {"refrigerante|refri", "🥤"},
+        {"agua mineral|agua com gas|agua sem gas|agua potavel|garrafa de agua", "💧"},
+        {"agua de coco", "🥥"},
+        {"cafe em po|cafe soluvel|capsula de cafe|cappuccino|capuccino|espresso|cafe", "☕"},
+        {"cha gelado|cha pronto|cha mate|infusao|cha", "🍵"},
         {"sabonete|sabao em po|sabao", "🧼"},
         {"detergente|desinfetante|agua sanitaria|alvejante", "🧴"},
         {"shampoo|xampu|condicionador|creme hidratante|desodorante|perfume", "🧴"},
