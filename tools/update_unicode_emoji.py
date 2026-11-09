@@ -238,7 +238,7 @@ def main() -> None:
             continue
         seen.add(glyph)
 
-        unicode_name = re.sub(r"^\\s*\\S+\\s+E[0-9.]+\\s+", "", comment).strip()
+        unicode_name = re.sub(r"^\s*\S+\s+E[0-9.]+\s+", "", comment).strip()
         if not is_product_emoji(current_group, current_subgroup, unicode_name):
             continue
         name = existing.get(glyph) or cldr_names.get(glyph) or unicode_name or glyph
