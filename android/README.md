@@ -69,3 +69,9 @@ O artefato do workflow `Verify Shopping Lists Android` é somente para testes e 
 Não distribua esse artefato como atualização Release. Para atualizações de usuários, use o workflow `Build Shopping Lists APK`, com identificador `br.com.shoppinglist` e a mesma chave privada Release protegida nos Actions Secrets.
 
 O primeiro APK Debug entregue antes da criação do cache foi assinado com uma chave temporária do runner, que não foi guardada. Não é possível gerar outra APK que atualize aquela instalação sem a chave privada original; o Android exige que o certificado de assinatura corresponda. A correção do cache evita que esse problema volte a acontecer nas próximas compilações Debug, mas não recupera a primeira chave perdida.
+
+## Baixar pelo aplicativo GitHub no Android
+
+As versões instaláveis são publicadas em [Releases](https://github.com/768ull/Shopping-List/releases). No GitHub Mobile, abra o repositório → **Releases** → escolha a versão → **Assets** → **ShoppingList.apk**. O ZIP de **Code → Download ZIP** é apenas o código-fonte.
+
+Cada versão nova fica como uma Release separada e as anteriores continuam disponíveis. A publicação depende de uma execução concluída do workflow **Build Shopping Lists APK** e dos quatro Secrets privados de assinatura indicados acima. Se uma versão antiga nunca teve APK publicado, ela não pode ser baixada retroativamente sem recuperar aquele build.
