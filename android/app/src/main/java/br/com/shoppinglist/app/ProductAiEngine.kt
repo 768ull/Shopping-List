@@ -54,7 +54,7 @@ object ProductAiEngine {
     private const val IMAGE_MODEL_ID = "concedo/sdxs-512-tinySDdistilled-GGUF"
     private const val IMAGE_MODEL_REVISION = "3144d898d61492f8382ffcabec055733fc5b2a0e"
     private const val IMAGE_MODEL_FILE = "sdxs-512-tinySDdistilled_Q8_0.gguf"
-    private const val VECTOR_CACHE_VERSION = 2
+    private const val VECTOR_CACHE_VERSION = 3
     private const val VECTOR_DIMENSION = 768
     private const val MIN_SIMILARITY = 0.78f
     private const val GIB = 1024L * 1024L * 1024L
@@ -148,9 +148,7 @@ object ProductAiEngine {
         Candidate("vassoura de limpeza", "🧹"),
         Candidate("balde de limpeza", "🪣"),
         Candidate("escova de dente, escova dental", "🪥"),
-        Candidate("cachorro, cão", "🐶"),
-        Candidate("gato, felino", "🐱"),
-        Candidate("pata de animal, pegadas", "🐾"),
+        Candidate("ração para cachorro, ração para gato, petisco para animais, osso para cachorro", "🦴"),
         Candidate("planta em vaso, planta doméstica", "🪴"),
         Candidate("celular, telefone, smartphone", "📱"),
         Candidate("televisão, TV", "📺"),
