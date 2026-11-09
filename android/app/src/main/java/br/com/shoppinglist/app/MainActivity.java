@@ -44,6 +44,11 @@ import android.widget.Toast;
 
 import android.graphics.pdf.PdfDocument;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -58,6 +63,10 @@ public class MainActivity extends android.app.Activity {
     private static final int REQUEST_PDF = 4101;
     private static final int REQUEST_IMAGE_FOLDER = 4102;
     private static final int REQUEST_UNKNOWN_SOURCES = 4103;
+    private static final int REQUEST_BACKUP_EXPORT = 4104;
+    private static final int REQUEST_BACKUP_IMPORT = 4105;
+    private static final int MAX_BACKUP_BYTES = 40 * 1024 * 1024;
+    private static final int MAX_STICKER_BACKUP_BYTES = 4 * 1024 * 1024;
     private java.io.File pendingUpdateApk;
 
     private static final int BG_YELLOW = Color.rgb(255, 239, 174);
@@ -176,6 +185,32 @@ public class MainActivity extends android.app.Activity {
         updateParams.bottomMargin = dp(12);
         content.addView(checkUpdates, updateParams);
         checkUpdates.setOnClickListener(v -> checkForUpdates());
+
+        LinearLayout backupRow = new LinearLayout(this);
+        backupRow.setOrientation(LinearLayout.HORIZONTAL);
+        backupRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView exportBackup = action("SALVAR BACKUP", INK, BG_YELLOW_LIGHT, 11, true);
+        exportBackup.setGravity(Gravity.CENTER);
+        exportBackup.setPadding(dp(8), dp(13), dp(8), dp(13));
+        exportBackup.setBackground(roundDrawable(BG_YELLOW_LIGHT, dp(14), Color.rgb(240, 213, 145), dp(1)));
+        TextView importBackup = action("RESTAURAR BACKUP", INK, BG_YELLOW_LIGHT, 11, true);
+        importBackup.setGravity(Gravity.CENTER);
+        importBackup.setPadding(dp(8), dp(13), dp(8), dp(13));
+        importBackup.setBackground(roundDrawable(BG_YELLOW_LIGHT, dp(14), Color.rgb(240, 213, 145), dp(1)));
+        LinearLayout.LayoutParams backupButtonParams = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        backupButtonParams.rightMargin = dp(6);
+        backupRow.addView(exportBackup, backupButtonParams);
+        LinearLayout.LayoutParams restoreButtonParams = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        restoreButtonParams.leftMargin = dp(6);
+        backupRow.addView(importBackup, restoreButtonParams);
+        LinearLayout.LayoutParams backupRowParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        backupRowParams.bottomMargin = dp(12);
+        content.addView(backupRow, backupRowParams);
+        exportBackup.setOnClickListener(v -> chooseBackupExport());
+        importBackup.setOnClickListener(v -> chooseBackupImport());
 
         TextView create = action("＋   CRIAR LISTA NOVA", Color.WHITE, ORANGE, 18, true);
         create.setGravity(Gravity.CENTER);
@@ -945,6 +980,165 @@ public class MainActivity extends android.app.Activity {
         return export;
     }
 
+    private void chooseBackupExport() {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmm", Locale.ROOT).format(new Date());
+        intent.putExtra(Intent.EXTRA_TITLE, "shopping-lists-backup_" + timestamp + ".json");
+        startActivityForResult(intent, REQUEST_BACKUP_EXPORT);
+    }
+
+    private void chooseBackupImport() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivityForResult(intent, REQUEST_BACKUP_IMPORT);
+    }
+
+    private void exportBackup(Uri destination) {
+        new Thread(() -> {
+            String error = null;
+            try {
+                JSONObject backup = buildPortableBackup();
+                byte[] data = backup.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                if (data.length > MAX_BACKUP_BYTES) {
+                    throw new IllegalStateException("O backup ficou maior que 40 MB. Salve menos imagens geradas e tente novamente.");
+                }
+                try (OutputStream output = getContentResolver().openOutputStream(destination, "w")) {
+                    if (output == null) throw new IllegalStateException("Não foi possível abrir o arquivo escolhido.");
+                    output.write(data);
+                    output.flush();
+                }
+            } catch (Exception e) {
+                error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            }
+            final String finalError = error;
+            runOnUiThread(() -> {
+                if (finalError == null) {
+                    Toast.makeText(this, "Backup salvo. Guarde o arquivo para restaurar suas listas em outra instalação.", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "Falha ao salvar backup: " + finalError, Toast.LENGTH_LONG).show();
+                }
+            });
+        }, "shopping-list-backup-export").start();
+    }
+
+    private JSONObject buildPortableBackup() throws Exception {
+        JSONObject backup = database.exportBackup();
+        JSONArray lists = backup.getJSONArray("lists");
+        for (int i = 0; i < lists.length(); i++) {
+            JSONObject list = lists.getJSONObject(i);
+            JSONArray items = list.getJSONArray("items");
+            for (int j = 0; j < items.length(); j++) {
+                JSONObject item = items.getJSONObject(j);
+                String stickerValue = item.optString("emoji", "");
+                if (!stickerValue.matches("generated:[0-9a-f]{64}")) continue;
+                java.io.File stickerFile = ProductAiEngine.generatedFile(this, stickerValue);
+                if (!stickerFile.isFile() || stickerFile.length() <= 0
+                        || stickerFile.length() > MAX_STICKER_BACKUP_BYTES) continue;
+                byte[] imageBytes;
+                try (InputStream input = new java.io.FileInputStream(stickerFile);
+                     ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+                    byte[] chunk = new byte[8192];
+                    int count;
+                    while ((count = input.read(chunk)) != -1) {
+                        buffer.write(chunk, 0, count);
+                        if (buffer.size() > MAX_STICKER_BACKUP_BYTES) break;
+                    }
+                    imageBytes = buffer.toByteArray();
+                }
+                if (imageBytes.length > 0 && imageBytes.length <= MAX_STICKER_BACKUP_BYTES) {
+                    item.put("generatedStickerBase64",
+                            android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP));
+                }
+            }
+        }
+        return backup;
+    }
+
+    private void confirmImportBackup(Uri source) {
+        new AlertDialog.Builder(this)
+                .setTitle("Restaurar backup")
+                .setMessage("As listas do arquivo serão adicionadas às listas que já existem. Nada será apagado. Importe cada backup apenas uma vez para evitar cópias duplicadas.")
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Restaurar", (dialog, which) -> importBackup(source))
+                .show();
+    }
+
+    private void importBackup(Uri source) {
+        new Thread(() -> {
+            String error = null;
+            int imported = 0;
+            try {
+                byte[] data;
+                try (InputStream input = getContentResolver().openInputStream(source);
+                     ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+                    if (input == null) throw new IllegalStateException("Não foi possível abrir o arquivo de backup.");
+                    byte[] chunk = new byte[8192];
+                    int count;
+                    while ((count = input.read(chunk)) != -1) {
+                        buffer.write(chunk, 0, count);
+                        if (buffer.size() > MAX_BACKUP_BYTES) {
+                            throw new IllegalStateException("O arquivo de backup ultrapassa 40 MB.");
+                        }
+                    }
+                    data = buffer.toByteArray();
+                }
+                JSONObject backup = new JSONObject(new String(data, java.nio.charset.StandardCharsets.UTF_8));
+                restoreGeneratedStickers(backup);
+                imported = database.importBackup(backup);
+            } catch (Exception e) {
+                error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            }
+            final String finalError = error;
+            final int finalImported = imported;
+            runOnUiThread(() -> {
+                if (finalError == null) {
+                    showHome();
+                    Toast.makeText(this, finalImported + " lista(s) restaurada(s) com seus produtos, marcações e emojis.", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "Não foi possível restaurar o backup: " + finalError, Toast.LENGTH_LONG).show();
+                }
+            });
+        }, "shopping-list-backup-import").start();
+    }
+
+    private void restoreGeneratedStickers(JSONObject backup) throws Exception {
+        JSONArray lists = backup.optJSONArray("lists");
+        if (lists == null) return;
+        for (int i = 0; i < lists.length(); i++) {
+            JSONObject list = lists.optJSONObject(i);
+            if (list == null) continue;
+            JSONArray items = list.optJSONArray("items");
+            if (items == null) continue;
+            for (int j = 0; j < items.length(); j++) {
+                JSONObject item = items.optJSONObject(j);
+                if (item == null) continue;
+                String stickerValue = item.optString("emoji", "");
+                String encoded = item.optString("generatedStickerBase64", "");
+                if (!stickerValue.matches("generated:[0-9a-f]{64}") || encoded.isEmpty()) continue;
+                byte[] imageBytes = android.util.Base64.decode(encoded, android.util.Base64.NO_WRAP);
+                if (imageBytes.length == 0 || imageBytes.length > MAX_STICKER_BACKUP_BYTES
+                        || imageBytes.length < 8
+                        || (imageBytes[0] & 0xff) != 0x89 || imageBytes[1] != 0x50
+                        || imageBytes[2] != 0x4e || imageBytes[3] != 0x47) {
+                    throw new IllegalStateException("Uma imagem do backup está inválida.");
+                }
+                java.io.File destination = ProductAiEngine.generatedFile(this, stickerValue);
+                java.io.File parent = destination.getParentFile();
+                if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                    throw new IllegalStateException("Não foi possível restaurar uma imagem gerada.");
+                }
+                try (java.io.FileOutputStream output = new java.io.FileOutputStream(destination, false)) {
+                    output.write(imageBytes);
+                    output.flush();
+                }
+            }
+        }
+    }
+
     private void choosePdfLocation() {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -975,6 +1169,13 @@ public class MainActivity extends android.app.Activity {
             } else {
                 Toast.makeText(this, "A autorização para instalar atualizações não foi concedida.", Toast.LENGTH_LONG).show();
             }
+            return;
+        }
+        if (requestCode == REQUEST_BACKUP_EXPORT || requestCode == REQUEST_BACKUP_IMPORT) {
+            if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+            Uri backupUri = data.getData();
+            if (requestCode == REQUEST_BACKUP_EXPORT) exportBackup(backupUri);
+            else confirmImportBackup(backupUri);
             return;
         }
         if (resultCode != RESULT_OK || data == null || data.getData() == null || pendingExport == null) return;
