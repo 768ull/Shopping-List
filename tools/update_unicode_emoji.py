@@ -261,6 +261,11 @@ def main() -> None:
     names = {name.casefold() for _, name in rows}
     if any("brain" in name or "cérebro" in name for name in names):
         raise SystemExit("O catálogo filtrado incluiu indevidamente o emoji de cérebro.")
+    forbidden_glyphs = {"🛍️", "🛒", "🧠"}
+    included_forbidden = sorted(glyph for glyph, _ in rows if glyph in forbidden_glyphs)
+    if included_forbidden:
+        raise SystemExit("O catálogo filtrado incluiu pictogramas genéricos proibidos: "
+                         + ", ".join(included_forbidden))
 
     tsv = "".join(f"{glyph}\t{name}\n" for glyph, name in rows).encode("utf-8")
     digest = hashlib.sha256(tsv).hexdigest()
