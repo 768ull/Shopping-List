@@ -143,7 +143,7 @@ public final class ShoppingListRenderer {
         subtitle.setColor(Color.rgb(130, 91, 41));
         subtitle.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         subtitle.setTextSize(11f);
-        canvas.drawText("SHOPPING LIST  •  PÁGINA " + pageNumber + " DE " + pageCount, 83, 87, subtitle);
+        canvas.drawText("SHOPPING LISTS  •  PÁGINA " + pageNumber + " DE " + pageCount, 83, 87, subtitle);
 
         Paint body = new Paint(Paint.ANTI_ALIAS_FLAG);
         body.setColor(Color.rgb(48, 54, 64));
