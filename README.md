@@ -71,3 +71,12 @@ O manifesto público é:
 ## Estado de validação
 
 A migração dos arquivos para `android/` e a limpeza do ZIP foram concluídas pelo GitHub Actions. A compilação Release ainda depende dos Secrets de assinatura válidos e deve ser confirmada por uma execução do workflow de build.
+
+
+## Assinatura das compilações e atualização
+
+O APK produzido por `android-verify.yml` é somente de teste e usa o identificador `br.com.shoppinglist.debug`. A assinatura Debug foi configurada para persistir no cache do GitHub Actions, com execução agendada para manter o cache ativo. Não use esse artefato como Release.
+
+A versão-base do projeto agora é `versionCode 2` / `1.0.1`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping List APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões.
+
+**Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública, portanto não é possível reconstruir a chave privada nem assinar um APK de atualização compatível com aquela instalação. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
