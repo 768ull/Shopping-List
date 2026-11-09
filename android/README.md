@@ -27,7 +27,7 @@ O SDK 37 é usado para compilar e direcionar o aplicativo. `minSdk 30` define a 
 
 O `signingConfigs.release` ativa `enableV1Signing`, `enableV2Signing`, `enableV3Signing` e `enableV4Signing`. A assinatura V4 cria o arquivo separado `.idsig`.
 
-**Não existe mais um keystore dentro desta pasta.** A chave de desenvolvimento que acompanhava o ZIP original foi retirada do código atual e da cópia atual do ZIP porque o repositório é público. Ela apareceu em commits anteriores do histórico público e deve ser considerada exposta.
+**Não existe mais um keystore dentro desta pasta.** A chave privada que acompanhava o ZIP original foi removida da árvore atual, mas permanece no histórico público e deve ser considerada comprometida.
 
 O workflow `Build Shopping Lists APK` recebe a chave privada de distribuição por GitHub Actions Secrets. A chave antiga que estava no ZIP original foi exposta no histórico público; por segurança, não deve ser usada como chave nova de distribuição. Para publicar a Release oficial, configure uma chave nova nos Secrets (ou a chave privada que já está protegida e que corresponde à instalação instalada, se existir).
 - `SHOPPING_KEYSTORE_BASE64`
@@ -70,7 +70,7 @@ Não distribua esse artefato como atualização Release. Para atualizações de 
 
 O APK de teste é publicado como download direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test): toque no arquivo `ShoppingList-debug.apk` em **Assets**. Não baixe o ZIP de artefatos das Actions no celular; downloads grandes de artefatos costumam chegar corrompidos e o APK extraído faz o Android exibir "Ocorreu um problema ao analisar o pacote" na instalação.
 
-O primeiro APK Debug entregue antes da criação do cache foi assinado com uma chave temporária do runner, que não foi guardada. Não é possível gerar outra APK que atualize aquela instalação sem a chave privada original; o Android exige que o certificado de assinatura corresponda. A correção do cache evita que esse problema volte a acontecer nas próximas compilações Debug, mas não recupera a primeira chave perdida.
+O primeiro APK Debug (run 42650212939) entregue antes da criação do cache foi assinado com uma chave temporária do runner, que não foi guardada. Não é possível gerar outra APK que atualize aquela instalação sem a chave privada original; o Android exige que o certificado de assinatura corresponda. A correção do cache evita que esse problema volte a acontecer nas próximas compilações Debug, mas não recupera a primeira chave perdida.
 
 ## Baixar pelo aplicativo GitHub no Android
 
