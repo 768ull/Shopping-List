@@ -560,7 +560,14 @@ public class MainActivity extends android.app.Activity {
                     if (activity == null || activity.isFinishing() || target == null || editor == null) return;
                     String current = editor.getText() == null ? "" : editor.getText().toString().trim();
                     if (!product.equals(current) || item.emojiManual) return;
-                    target.setContentDescription(message);
+                    target.setText("…");
+                    target.setTextSize(20);
+                    target.setTextColor(ORANGE);
+                    target.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+                    target.setCompoundDrawables(null, null, null, null);
+                    target.setBackground(roundDrawable(Color.rgb(255, 246, 219), dp(12),
+                            Color.rgb(242, 220, 174), dp(1)));
+                    target.setContentDescription("IA local trabalhando: " + message);
                 }
 
                 @Override public void onResult(String result) {
