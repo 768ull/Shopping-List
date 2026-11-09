@@ -26,7 +26,12 @@ public final class ApkFileProvider extends ContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
-        File file = resolveApk(uri);
+        final File file;
+        try {
+            file = resolveApk(uri);
+        } catch (FileNotFoundException e) {
+            return null;
+        }
         String[] columns = projection == null
                 ? new String[]{OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE}
                 : projection;
