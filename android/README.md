@@ -60,3 +60,12 @@ O manifesto usado pelo aplicativo é:
 A verificação exige versão maior, link HTTPS, SHA-256 válido, pacote `br.com.shoppinglist` e o mesmo certificado de assinatura da instalação atual. Depois disso, o aplicativo abre o instalador oficial do Android para a confirmação da pessoa.
 
 O manifesto raiz começa sem APK publicado. Após a primeira publicação, o workflow atualiza `update.json` automaticamente.
+
+
+## Compilações Debug e atualizações
+
+O artefato do workflow `Verify Shopping List Android` é somente para testes e usa o identificador `br.com.shoppinglist.debug`. Ele agora usa uma chave Debug persistida no cache do GitHub Actions, renovado por um agendamento periódico. A versão-base está em `versionCode 2` / `versionName 1.0.1`.
+
+Não distribua esse artefato como atualização Release. Para atualizações de usuários, use o workflow `Build Shopping List APK`, com identificador `br.com.shoppinglist` e a mesma chave privada Release protegida nos Actions Secrets.
+
+O primeiro APK Debug entregue antes da criação do cache foi assinado com uma chave temporária do runner, que não foi guardada. Não é possível gerar outra APK que atualize aquela instalação sem a chave privada original; o Android exige que o certificado de assinatura corresponda. A correção do cache evita que esse problema volte a acontecer nas próximas compilações Debug, mas não recupera a primeira chave perdida.
