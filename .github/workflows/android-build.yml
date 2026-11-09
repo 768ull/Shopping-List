@@ -187,6 +187,8 @@ jobs:
       - name: Compilar, verificar assinatura e gerar checksum
         shell: bash
         env:
+          VERSION_CODE: ${{ inputs.version_code }}
+          VERSION_NAME: ${{ inputs.version_name }}
           CI_KEYSTORE_PASSWORD: ${{ secrets.SHOPPING_KEYSTORE_PASSWORD }}
           CI_KEY_ALIAS: ${{ secrets.SHOPPING_KEY_ALIAS }}
           CI_KEY_PASSWORD: ${{ secrets.SHOPPING_KEY_PASSWORD }}
@@ -209,7 +211,7 @@ jobs:
             exit 1
           fi
 
-          APK="\${APK_FILES[0]}"
+          APK="${APK_FILES[0]}"
           test -s "$APK"
           APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
           AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
