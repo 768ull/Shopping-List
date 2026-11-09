@@ -200,7 +200,7 @@ object ProductAiEngine {
                     if (normalized.length < 2) return@withLock
 
                     val key = productKey(normalized)
-                    val existing = generatedFile(appContext, key)
+                    val existing = generatedStickerFile(appContext, key)
                     if (existing.isFile && existing.length() > 4096L) {
                         deliverResult(callback, GENERATED_PREFIX + key)
                         return@withLock
@@ -236,10 +236,10 @@ object ProductAiEngine {
     @JvmStatic
     fun generatedFile(context: Context, value: String): File {
         val key = value.removePrefix(GENERATED_PREFIX)
-        return generatedFile(context, key)
+        return generatedStickerFile(context, key)
     }
 
-    private fun generatedFile(context: Context, key: String): File {
+    private fun generatedStickerFile(context: Context, key: String): File {
         return File(File(context.filesDir, "generated_stickers"), "$key.png")
     }
 
@@ -471,7 +471,7 @@ object ProductAiEngine {
         key: String,
         callback: Callback
     ): File {
-        val outputFile = generatedFile(context, key)
+        val outputFile = generatedStickerFile(context, key)
         if (outputFile.isFile && outputFile.length() > 4096L) return outputFile
 
         val storage = StatFs(context.filesDir.absolutePath)
