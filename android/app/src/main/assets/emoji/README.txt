@@ -1,4 +1,4 @@
-Shopping List — Catálogo de emojis
+Shopping Lists — Catálogo de emojis
 
 Versão dos dados: Unicode Emoji 18.0 (15 de setembro de 2026).
 
