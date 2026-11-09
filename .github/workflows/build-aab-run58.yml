@@ -1,0 +1,97 @@
+name: Build Shopping List AAB - Run 58
+
+on:
+  push:
+    branches:
+      - build-aab-run58
+    paths:
+      - ".github/workflows/build-aab-run58.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-aab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact source from successful run 58
+        uses: actions/checkout@v4
+        with:
+          ref: 4c37aa500783c14237c1b25929e631ff5ca8f447
+
+      - name: Install JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Prepare Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
+
+      - name: Install Android platform and build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+
+      - name: Prepare Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.6.0"
+
+      - name: Build AAB from run 58 source
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SHOPPING_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.SHOPPING_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SHOPPING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SHOPPING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p release-files
+          if [[ -n "$KEYSTORE_BASE64" && -n "$KEYSTORE_PASSWORD" && -n "$KEY_ALIAS" && -n "$KEY_PASSWORD" ]]; then
+            mkdir -p android/signing
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/signing/shopping-list-release.jks
+            test -s android/signing/shopping-list-release.jks
+            keytool -list -keystore android/signing/shopping-list-release.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+            printf 'storeFile=shopping-list-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/signing/signing.properties
+            chmod 600 android/signing/shopping-list-release.jks android/signing/signing.properties
+            echo "Assinatura Release: assinada com os Secrets privados do repositório." > release-files/SIGNING_STATUS.txt
+          else
+            python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/app/build.gradle")
+          source = path.read_text(encoding="utf-8")
+          old = "            signingConfig signingConfigs.release\n"
+          if source.count(old) != 1:
+              raise SystemExit("Não foi possível desativar a assinatura Release para gerar um AAB sem assinatura.")
+          path.write_text(source.replace(old, "", 1), encoding="utf-8")
+          PY
+            echo "AAB Release sem assinatura: os Secrets SHOPPING_KEYSTORE_* não estão todos configurados. É necessário assinar com a chave de upload antes de enviar à Play Store." > release-files/SIGNING_STATUS.txt
+          fi
+
+          gradle --no-daemon --stacktrace -p android :app:bundleRelease
+
+          mapfile -t AABS < <(find android/app/build/outputs/bundle/release -type f -name '*.aab' | sort)
+          if [[ "${#AABS[@]}" -ne 1 ]]; then
+            echo "::error::Esperava exatamente um AAB Release; encontrei ${#AABS[@]}."
+            find android/app/build/outputs -maxdepth 7 -type f -print || true
+            exit 1
+          fi
+
+          cp "${AABS[0]}" release-files/ShoppingList-Run58.aab
+          test -s release-files/ShoppingList-Run58.aab
+          sha256sum release-files/ShoppingList-Run58.aab | awk '{print $1}' > release-files/sha256.txt
+          printf 'Commit de origem: 4c37aa500783c14237c1b25929e631ff5ca8f447\nVersão Android: versionCode 5 / versionName 1.0.4\n' > release-files/SOURCE.txt
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShoppingList-AAB-Run58
+          path: release-files/*
+          if-no-files-found: error
+          retention-days: 30
