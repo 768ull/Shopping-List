@@ -440,9 +440,9 @@ public class MainActivity extends android.app.Activity {
         row.addView(check, new LinearLayout.LayoutParams(dp(34), dp(48)));
         check.setOnCheckedChangeListener((buttonView, checked) -> database.setItemChecked(item.id, checked));
 
-        TextView sticker = label(item.emoji == null ? "🛒" : item.emoji, 25, INK, false);
+        TextView sticker = label("", 25, INK, false);
         sticker.setGravity(Gravity.CENTER);
-        sticker.setBackground(roundDrawable(Color.rgb(255, 246, 219), dp(12), Color.rgb(242, 220, 174), dp(1)));
+        renderSticker(sticker, item.emoji == null ? "🛒" : item.emoji);
         row.addView(sticker, new LinearLayout.LayoutParams(dp(43), dp(43)));
         sticker.setOnClickListener(v -> showEmojiPicker(item, sticker));
 
@@ -473,7 +473,7 @@ public class MainActivity extends android.app.Activity {
                     if (!detected.equals(item.emoji)) {
                         item.emoji = detected;
                         database.setItemEmoji(item.id, detected, false);
-                        sticker.setText(detected);
+                        renderSticker(sticker, detected);
                     }
                 }
             }
@@ -496,63 +496,209 @@ public class MainActivity extends android.app.Activity {
         return row;
     }
 
+    private void renderSticker(TextView view, String value) {
+        StickerCatalog.Sticker custom = StickerCatalog.fromValue(value);
+        if (custom != null) {
+            view.setText(custom.badge);
+            view.setTextSize(11);
+            view.setTextColor(custom.foreground);
+            view.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+            view.setBackground(roundDrawable(custom.background, dp(12), Color.rgb(232, 215, 183), dp(1)));
+            view.setContentDescription(custom.title);
+        } else {
+            view.setText(value == null || value.isEmpty() ? "🛒" : value);
+            view.setTextSize(25);
+            view.setTextColor(INK);
+            view.setTypeface(Typeface.DEFAULT);
+            view.setBackground(roundDrawable(Color.rgb(255, 246, 219), dp(12), Color.rgb(242, 220, 174), dp(1)));
+        }
+    }
+
     private void showEmojiPicker(AppDatabase.ShoppingItem item, TextView sticker) {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
         LinearLayout outer = new LinearLayout(this);
         outer.setOrientation(LinearLayout.VERTICAL);
-        outer.setPadding(dp(16), dp(14), dp(16), dp(16));
+        outer.setPadding(dp(14), dp(14), dp(14), dp(14));
         outer.setBackground(roundDrawable(PAPER, dp(20), Color.rgb(234, 210, 159), dp(1)));
-        TextView heading = label("Escolha o adesivo", 18, INK, true);
-        heading.setPadding(0, 0, 0, dp(10));
+
+        TextView heading = label("Escolha um emoji ou adesivo", 18, INK, true);
+        heading.setPadding(0, 0, 0, dp(4));
         outer.addView(heading);
+
+        int emojiCount = EmojiCatalog.all(this).size();
+        TextView catalogInfo = label(
+                emojiCount + " emojis Unicode " + EmojiCatalog.UNICODE_VERSION
+                        + " • pesquisa em português • offline",
+                10, MUTED, false);
+        catalogInfo.setPadding(0, 0, 0, dp(10));
+        outer.addView(catalogInfo);
+
+        EditText search = new EditText(this);
+        search.setSingleLine(true);
+        search.setTextSize(14);
+        search.setTextColor(INK);
+        search.setHintTextColor(MUTED);
+        search.setHint("Pesquisar: feijão, bateria, detergente...");
+        search.setPadding(dp(12), dp(9), dp(12), dp(9));
+        search.setBackground(roundDrawable(Color.rgb(255, 250, 235), dp(12),
+                Color.rgb(238, 218, 178), dp(1)));
+        outer.addView(search);
+
+        LinearLayout tabs = new LinearLayout(this);
+        tabs.setOrientation(LinearLayout.HORIZONTAL);
+        tabs.setGravity(Gravity.CENTER);
+        tabs.setPadding(0, dp(9), 0, dp(8));
+        TextView emojiTab = action("😀  EMOJIS", Color.WHITE, ORANGE, 12, true);
+        emojiTab.setGravity(Gravity.CENTER);
+        emojiTab.setPadding(dp(12), dp(10), dp(12), dp(10));
+        emojiTab.setBackground(roundDrawable(ORANGE, dp(12), 0, 0));
+        TextView stickerTab = action("🏷  ADESIVOS", INK, BG_YELLOW_LIGHT, 12, true);
+        stickerTab.setGravity(Gravity.CENTER);
+        stickerTab.setPadding(dp(12), dp(10), dp(12), dp(10));
+        stickerTab.setBackground(roundDrawable(BG_YELLOW_LIGHT, dp(12),
+                Color.rgb(240, 213, 145), dp(1)));
+        tabs.addView(emojiTab, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        LinearLayout.LayoutParams stickerTabParams = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        stickerTabParams.leftMargin = dp(7);
+        tabs.addView(stickerTab, stickerTabParams);
+        outer.addView(tabs);
+
+        TextView resultInfo = label("Seleção rápida. Digite para pesquisar em todo o catálogo.", 10, MUTED, false);
+        resultInfo.setPadding(dp(2), 0, 0, dp(5));
+        outer.addView(resultInfo);
+
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(false);
+        scroll.setClipToPadding(false);
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(5);
-        for (String emoji : EmojiCatalog.PALETTE) {
-            TextView choice = label(emoji, 27, INK, false);
-            choice.setGravity(Gravity.CENTER);
-            choice.setPadding(dp(4), dp(8), dp(4), dp(8));
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = dp(48);
-            params.height = dp(50);
-            grid.addView(choice, params);
-            choice.setOnClickListener(v -> {
-                item.emoji = emoji;
-                item.emojiManual = true;
-                database.setItemEmoji(item.id, emoji, true);
-                sticker.setText(emoji);
-                dialog.dismiss();
-            });
-        }
-        scroll.addView(grid);
-        outer.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(280)));
-        TextView backToAuto = action("Usar emoji automático", ORANGE, Color.rgb(255, 239, 205), 13, true);
-        backToAuto.setGravity(Gravity.CENTER);
-        backToAuto.setPadding(dp(10), dp(12), dp(10), dp(12));
-        backToAuto.setBackground(roundDrawable(Color.rgb(255, 239, 205), dp(14), 0, 0));
+        scroll.addView(grid, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        outer.addView(scroll, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(300)));
+
+        final boolean[] showingStickers = {false};
+        Runnable refreshGrid = () -> {
+            grid.removeAllViews();
+            if (showingStickers[0]) {
+                search.setVisibility(View.GONE);
+                resultInfo.setText("Adesivos próprios por categoria. Não dependem de fontes de emoji.");
+                for (StickerCatalog.Sticker custom : StickerCatalog.all()) {
+                    LinearLayout tile = new LinearLayout(this);
+                    tile.setOrientation(LinearLayout.VERTICAL);
+                    tile.setGravity(Gravity.CENTER);
+                    tile.setPadding(dp(2), dp(4), dp(2), dp(4));
+                    TextView badge = label(custom.badge, 13, custom.foreground, true);
+                    badge.setGravity(Gravity.CENTER);
+                    badge.setBackground(roundDrawable(custom.background, dp(11),
+                            Color.rgb(232, 215, 183), dp(1)));
+                    tile.addView(badge, new LinearLayout.LayoutParams(dp(43), dp(39)));
+                    TextView name = label(custom.title, 9, MUTED, false);
+                    name.setGravity(Gravity.CENTER);
+                    name.setMaxLines(2);
+                    tile.addView(name, new LinearLayout.LayoutParams(dp(62), dp(30)));
+                    GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+                    params.width = dp(67);
+                    params.height = dp(76);
+                    grid.addView(tile, params);
+                    tile.setOnClickListener(v -> {
+                        item.emoji = custom.value();
+                        item.emojiManual = true;
+                        database.setItemEmoji(item.id, item.emoji, true);
+                        renderSticker(sticker, item.emoji);
+                        dialog.dismiss();
+                    });
+                }
+            } else {
+                search.setVisibility(View.VISIBLE);
+                String query = search.getText() == null ? "" : search.getText().toString().trim();
+                List<EmojiCatalog.EmojiEntry> matches = query.isEmpty()
+                        ? EmojiCatalog.quick(this)
+                        : EmojiCatalog.search(this, query, 220);
+                resultInfo.setText(query.isEmpty()
+                        ? "Seleção rápida • " + emojiCount + " emojis disponíveis para pesquisa."
+                        : matches.size() + " resultado(s) • pesquisando nomes em português.");
+                if (matches.isEmpty()) {
+                    TextView empty = label("Nenhum emoji encontrado. Experimente outra palavra ou abra Adesivos.", 13, MUTED, false);
+                    empty.setGravity(Gravity.CENTER);
+                    empty.setPadding(dp(10), dp(25), dp(10), dp(25));
+                    grid.addView(empty, new GridLayout.LayoutParams());
+                } else {
+                    for (EmojiCatalog.EmojiEntry entry : matches) {
+                        TextView choice = label(entry.emoji, 27, INK, false);
+                        choice.setGravity(Gravity.CENTER);
+                        choice.setContentDescription(entry.name);
+                        choice.setBackground(roundDrawable(Color.rgb(255, 250, 235), dp(10),
+                                Color.rgb(245, 230, 202), dp(1)));
+                        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+                        params.width = dp(54);
+                        params.height = dp(54);
+                        params.setMargins(dp(2), dp(2), dp(2), dp(2));
+                        grid.addView(choice, params);
+                        choice.setOnClickListener(v -> {
+                            item.emoji = entry.emoji;
+                            item.emojiManual = true;
+                            database.setItemEmoji(item.id, entry.emoji, true);
+                            renderSticker(sticker, entry.emoji);
+                            dialog.dismiss();
+                        });
+                    }
+                }
+            }
+        };
+
+        emojiTab.setOnClickListener(v -> {
+            showingStickers[0] = false;
+            emojiTab.setTextColor(Color.WHITE);
+            emojiTab.setBackground(roundDrawable(ORANGE, dp(12), 0, 0));
+            stickerTab.setTextColor(INK);
+            stickerTab.setBackground(roundDrawable(BG_YELLOW_LIGHT, dp(12),
+                    Color.rgb(240, 213, 145), dp(1)));
+            refreshGrid.run();
+        });
+        stickerTab.setOnClickListener(v -> {
+            showingStickers[0] = true;
+            stickerTab.setTextColor(Color.WHITE);
+            stickerTab.setBackground(roundDrawable(ORANGE, dp(12), 0, 0));
+            emojiTab.setTextColor(INK);
+            emojiTab.setBackground(roundDrawable(BG_YELLOW_LIGHT, dp(12),
+                    Color.rgb(240, 213, 145), dp(1)));
+            refreshGrid.run();
+        });
+        search.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!showingStickers[0]) refreshGrid.run();
+            }
+            @Override public void afterTextChanged(Editable s) { }
+        });
+
+        TextView auto = action("Usar reconhecimento automático", ORANGE, Color.rgb(255, 239, 205), 13, true);
+        auto.setGravity(Gravity.CENTER);
+        auto.setPadding(dp(10), dp(12), dp(10), dp(12));
+        auto.setBackground(roundDrawable(Color.rgb(255, 239, 205), dp(14), 0, 0));
         LinearLayout.LayoutParams autoParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         autoParams.topMargin = dp(10);
-        outer.addView(backToAuto, autoParams);
-        backToAuto.setOnClickListener(v -> {
+        outer.addView(auto, autoParams);
+        auto.setOnClickListener(v -> {
             item.emojiManual = false;
             item.emoji = EmojiCatalog.automatic(item.text);
             database.setItemEmoji(item.id, item.emoji, false);
-            sticker.setText(item.emoji);
+            renderSticker(sticker, item.emoji);
             dialog.dismiss();
         });
+
+        refreshGrid.run();
         dialog.setContentView(outer);
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawableResource(android.R.color.transparent);
-            window.setLayout(Math.min(getResources().getDisplayMetrics().widthPixels - dp(40), dp(360)),
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-        }
         dialog.show();
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            dialog.getWindow().setLayout(Math.min(getResources().getDisplayMetrics().widthPixels - dp(40), dp(360)),
+            dialog.getWindow().setLayout(
+                    Math.min(getResources().getDisplayMetrics().widthPixels - dp(28), dp(390)),
                     ViewGroup.LayoutParams.WRAP_CONTENT);
         }
     }
