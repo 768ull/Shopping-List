@@ -9,7 +9,7 @@ O arquivo `Shopping_List_Project_com_Atualizador.zip` permanece como cópia auxi
 ## Ambiente de compilação
 
 - JDK 17
-- Android SDK Platform 37
+- Android SDK Platform 36
 - Android SDK Build Tools 36.0.0
 - Android Gradle Plugin 9.5.0
 - Gradle 9.6.0
@@ -24,7 +24,7 @@ O `android/app/build.gradle` já ativa as assinaturas V1, V2, V3 e V4. A V4 gera
 
 O ZIP original continha `signing/shopping-list-release.jks` e `signing/signing.properties`. Como o repositório é público, esses arquivos foram expostos em commits anteriores. O keystore foi removido da árvore atual, mas isso não apaga as versões antigas do arquivo no histórico GitHub.
 
-**Não use a chave antiga como chave de distribuição segura.** Se já existir uma instalação do Shopping List assinada com ela, uma nova chave não será aceita como atualização normal. Nesse caso, é preciso preservar a identidade antiga ou planejar uma rotação compatível antes de distribuir o novo APK. O repositório possui a pré-release de teste `debug-test` com o APK `1.0.6`; ainda não possui uma Release oficial de produção. Isso não confirma se você instalou alguma compilação local.
+**Não use a chave antiga como chave de distribuição segura.** Se já existir uma instalação do Shopping List assinada com ela, uma nova chave não será aceita como atualização normal. Nesse caso, é preciso preservar a identidade antiga ou planejar uma rotação compatível antes de distribuir o novo APK. O repositório possui a pré-release de teste `debug-test` com o APK `1.0.7`; ainda não possui uma Release oficial de produção. Isso não confirma se você instalou alguma compilação local.
 
 ### Criar e guardar uma chave de distribuição
 
@@ -66,14 +66,14 @@ O workflow decodifica o keystore no diretório temporário `android/signing/`, c
 
 1. Configure os quatro Secrets acima.
 2. Abra **Actions → Build Shopping Lists APK → Run workflow**.
-3. Para a primeira publicação oficial, use `version_code=7` e `version_name=1.0.6`, que correspondem à versão-base atual do projeto; o manifesto inicial ainda não contém APK oficial publicado.
+3. Para a primeira publicação oficial, use `version_code=8` e `version_name=1.0.7`, que correspondem à versão-base atual do projeto; o manifesto inicial ainda não contém APK oficial publicado.
 4. O workflow compila, valida o APK, publica o Release e atualiza `update.json`.
 
 O pipeline confirma V1/V2/V3 com `apksigner` e exige o arquivo `.idsig` para V4.
 
 ## Publicar atualizações futuras
 
-Aumente `version_code` em cada publicação: a próxima será 8, depois 9 e assim por diante. Use nomes de versão crescentes, por exemplo 1.0.7 e 1.0.8. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `ShoppingList.apk`, `ShoppingList.apk.idsig`, SHA-256 e atualiza o manifesto.
+Aumente `version_code` em cada publicação: a próxima será 8, depois 9 e assim por diante. Use nomes de versão crescentes, por exemplo 1.0.8 e 1.0.9. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `ShoppingList.apk`, `ShoppingList.apk.idsig`, SHA-256 e atualiza o manifesto.
 
 O aplicativo consulta:
 `https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
