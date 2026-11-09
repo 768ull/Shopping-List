@@ -40,6 +40,7 @@ O arquivo `Shopping_List_Project_com_Atualizador.zip` é uma cópia auxiliar do 
 - Exportação de listas em PDF multipágina ou PNG.
 - Verificação manual de atualizações via HTTPS e manifesto `update.json`.
 - Catálogo de **436 emojis de produtos** (Unicode filtrado), sem rostos, gestos, sinais ou animais usados como substitutos de mercadorias.
+- Bloqueio de pictogramas genéricos (🛍️, 🛒 e 🧠), reconhecimento local ampliado para produtos e marcas brasileiras de bebidas e alimentos, e indicador visual da IA local enquanto identifica ou cria um adesivo.
 - Compatibilidade com emojis inseridos pelo Gboard, Microsoft SwiftKey ou outro teclado Android, com validação contra o catálogo de produtos.
 - Atualização automática do catálogo filtrado via GitHub Actions e verificação em segundo plano no aplicativo.
 
@@ -80,7 +81,7 @@ A compilação Debug `1.0.8` foi concluída com sucesso no GitHub Actions. O APK
 
 O APK produzido por `android-verify.yml` é somente de teste e usa o identificador `br.com.shoppinglist.debug`. A assinatura Debug foi configurada para persistir no cache do GitHub Actions, com execução agendada para manter o cache ativo. Não use esse artefato como Release.
 
-A versão-base do projeto agora é `versionCode 9` / `1.0.8`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping Lists APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões.
+A versão-base do projeto agora é `versionCode 10` / `1.0.9`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping Lists APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões.
 
 **Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública, portanto não é possível reconstruir a chave privada nem assinar um APK de atualização compatível com aquela instalação. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
 
