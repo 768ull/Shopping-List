@@ -28,7 +28,7 @@ PRODUCT_SUBGROUPS = {
                      "food-marine", "food-sweet", "drink", "dishware"},
     "Objects": {"clothing", "sound", "music", "musical-instrument", "phone",
                 "computer", "light & video", "book-paper", "writing", "office",
-                "lock", "tool", "medical", "household", "other-object"},
+                "lock", "tool", "medical", "household"},
 }
 
 CLDR_SOURCES = (
@@ -114,8 +114,10 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
     # Keep seafood, flowers and plants, but not ordinary wild/pet animals.
     if group == "Animals & Nature":
         if subgroup == "animal-marine":
-            return any(term in normalized for term in
-                       ("fish", "shrimp", "crab", "lobster", "squid", "oyster"))
+            return normalized in {
+                "fish", "tropical fish", "blowfish", "crab", "lobster",
+                "shrimp", "squid", "oyster"
+            }
         if subgroup == "plant-flower":
             return any(term in normalized for term in
                        ("bouquet", "rose", "tulip", "hibiscus", "sunflower",
@@ -140,9 +142,14 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
     # game component or sporting good.
     if group == "Activities":
         if subgroup == "sport":
-            return any(term in normalized for term in
-                       ("ball", "racket", "bat", "glove", "skateboard",
-                        "fishing pole", "yo-yo", "kite", "goal net"))
+            return normalized in {
+                "soccer ball", "baseball", "softball", "basketball", "volleyball",
+                "american football", "rugby football", "tennis", "flying disc",
+                "bowling", "cricket game", "field hockey", "ice hockey", "lacrosse",
+                "ping pong", "badminton", "boxing glove", "martial arts uniform",
+                "goal net", "ice skate", "fishing pole", "diving mask",
+                "running shirt", "skis", "sled", "curling stone"
+            }
         if subgroup == "game":
             return any(term in normalized for term in
                        ("game die", "puzzle piece", "joystick", "chess pawn",
@@ -185,9 +192,6 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
         if subgroup == "tool":
             return not any(term in normalized for term in
                            ("dagger", "sword", "bomb", "boomerang", "bow and arrow", "shield"))
-        if subgroup == "other-object":
-            return not any(term in normalized for term in
-                           ("input symbol", "envelope with arrow", "ballot", "chart"))
         return True
 
     return False
