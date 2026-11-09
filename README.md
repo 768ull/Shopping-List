@@ -39,6 +39,9 @@ O arquivo `Shopping_List_Project_com_Atualizador.zip` é uma cópia auxiliar do 
 - Emojis automáticos por palavras em português e seleção manual.
 - Exportação de listas em PDF multipágina ou PNG.
 - Verificação manual de atualizações via HTTPS e manifesto `update.json`.
+- Catálogo de **412 emojis de produtos** (Unicode filtrado), sem rostos, gestos, sinais ou animais usados como substitutos de mercadorias.
+- Compatibilidade com emojis inseridos pelo Gboard, Microsoft SwiftKey ou outro teclado Android, com validação contra o catálogo de produtos.
+- Atualização automática do catálogo filtrado via GitHub Actions e verificação em segundo plano no aplicativo.
 
 ## Compilar localmente
 
