@@ -46,18 +46,19 @@ public final class EmojiCatalog {
         // Produtos de limpeza precisam ser reconhecidos antes de qualquer regra de água/bebida.
         {"agua sanitaria|cloro|desinfetante|alvejante|detergente", "🧴"},
         {"papel higienico|papel toalha|guardanapo", "🧻"},
+        {"leite de coco|agua de coco|suco de coco", "🥥"},
         {"creme de leite|leite condensado|leite em po|leite|iogurte", "🥛"},
         {"manteiga|margarina", "🧈"},
         {"feijao preto|feijao carioca|feijao branco|feijao|lentilha", "🫘"},
         {"arroz integral|arroz branco|arroz", "🍚"},
-        {"maca verde|maca", "🍎"}, {"banana", "🍌"}, {"uva", "🍇"},
+        {"maca verde", "🍏"}, {"maca vermelha|maca", "🍎"}, {"banana", "🍌"}, {"uva", "🍇"},
         {"morango", "🍓"}, {"laranja|tangerina|mexerica", "🍊"},
         {"melancia", "🍉"}, {"abacaxi", "🍍"}, {"manga", "🥭"},
         {"pera", "🍐"}, {"limao", "🍋"}, {"abacate", "🥑"},
         {"tomate", "🍅"}, {"cenoura", "🥕"}, {"batata doce", "🍠"},
         {"batata inglesa|batata", "🥔"}, {"cebola", "🧅"}, {"alho", "🧄"},
         {"brocolis", "🥦"}, {"alface|couve|repolho|verdura|espinafre", "🥬"},
-        {"milho em lata|ervilha em lata|sardinha em lata|enlatado", "🥫"},
+        {"milho em lata|ervilha em lata|sardinha em lata|atum em lata|palmito|azeitona|enlatado", "🥫"},
         {"milho", "🌽"}, {"pepino", "🥒"}, {"pimentao", "🫑"},
         {"pimenta", "🌶️"}, {"cogumelo", "🍄"}, {"pao|bisnaga|torrada", "🍞"},
         {"queijo|mussarela|muçarela|requeijao", "🧀"}, {"ovo|ovos", "🥚"},
@@ -67,16 +68,21 @@ public final class EmojiCatalog {
         {"presunto|apresuntado", "sticker:PRESUNTO"}, {"mortadela", "sticker:MORTADELA"},
         {"bacon", "🥓"}, {"carne moida|carne|bife", "🥩"},
         {"frango|peito de frango|sobrecoxa", "🍗"},
-        {"peixe|tilapia|sardinha", "🐟"}, {"camarao", "🍤"},
+        {"peixe|tilapia|sardinha|salmao", "🐟"}, {"camarao", "🍤"},
         {"macarrao|espaguete|massa", "🍝"}, {"sopa|miojo", "🍜"},
         {"sal|tempero", "🧂"}, {"mel", "🍯"}, {"biscoito|bolacha|cookie", "🍪"},
         {"chocolate|bombom", "🍫"}, {"bala|pirulito", "🍬"},
         {"bolo|torta|doce", "🍰"}, {"sorvete", "🍦"}, {"pizza", "🍕"},
         {"hamburguer", "🍔"}, {"batata frita", "🍟"}, {"pipoca", "🍿"},
+        {"suco em po|tang|fresh|mid|del valle|maguary|dafruta|kapo", "🧃"},
         {"suco|suco natural|suco integral|suco de caixinha|nectar|refresco|polpa de fruta", "🧃"},
+        {"coca cola|pepsi|fanta|sprite|guarana antarctica|guarana antartica|kuat|dolly|itubaina|schweppes|h2oh", "🥤"},
+        {"red bull|monster energy|monster|baly|tnt|fusion|gatorade|powerade|isotonico|bebida energetica", "🥤"},
         {"refrigerante|refri", "🥤"},
         {"agua de coco", "🥥"},
+        {"bonafont|minalba|crystal|indaia|sao lourenco|perrier|evian", "💧"},
         {"agua mineral|agua com gas|agua sem gas|agua potavel|garrafa de agua|agua", "💧"},
+        {"leite ninho|ninho|itambe|piracanjuba|parmalat|italac|yakult|nescau|toddy|activia|danone", "🥛"},
         {"cafe em po|cafe soluvel|capsula de cafe|cappuccino|capuccino|espresso|cafe", "☕"},
         {"cha gelado|cha pronto|cha mate|infusao|cha", "🍵"},
         {"sabonete|sabao em po|sabao", "🧼"},
@@ -157,7 +163,9 @@ public final class EmojiCatalog {
                         if (separator <= 0 || separator >= line.length() - 1) continue;
                         String glyph = line.substring(0, separator);
                         String name = line.substring(separator + 1).trim();
-                        if (!glyph.isEmpty() && !name.isEmpty()) result.add(new EmojiEntry(glyph, name));
+                        if (!glyph.isEmpty() && !name.isEmpty() && !isForbiddenProductGlyph(glyph)) {
+                            result.add(new EmojiEntry(glyph, name));
+                        }
                     }
                 }
                 if (result.isEmpty()) throw new IllegalStateException("Catálogo vazio.");
@@ -230,7 +238,7 @@ public final class EmojiCatalog {
         String selected = rawValue.toString().trim();
         if (selected.isEmpty()) return null;
         for (EmojiEntry entry : all(context)) {
-            if (entry.emoji.equals(selected)) return entry.emoji;
+            if (!isForbiddenProductGlyph(entry.emoji) && entry.emoji.equals(selected)) return entry.emoji;
         }
         return null;
     }
@@ -283,10 +291,22 @@ public final class EmojiCatalog {
         for (String[] rule : RULES) {
             for (String term : rule[0].split("\\|")) {
                 String normalizedTerm = normalize(term);
-                if (hasPhrase(s, normalizedTerm) || fuzzyWordMatch(s, normalizedTerm)) return rule[1];
+                if (hasPhrase(s, normalizedTerm) || fuzzyWordMatch(s, normalizedTerm)) {
+                    return sanitizeProductEmoji(rule[1]);
+                }
             }
         }
-        return StickerCatalog.forText(s);
+        return sanitizeProductEmoji(StickerCatalog.forText(s));
+    }
+
+    /** Never allow shopping/status pictograms to become automatic product artwork. */
+    private static String sanitizeProductEmoji(String value) {
+        if (isForbiddenProductGlyph(value)) return StickerCatalog.PREFIX + "OUTRO";
+        return value;
+    }
+
+    private static boolean isForbiddenProductGlyph(String glyph) {
+        return "🛍️".equals(glyph) || "🛒".equals(glyph) || "🧠".equals(glyph);
     }
 
     private static boolean hasPhrase(String text, String phrase) {
