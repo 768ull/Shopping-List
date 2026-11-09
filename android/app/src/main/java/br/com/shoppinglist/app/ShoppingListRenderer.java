@@ -176,7 +176,21 @@ public final class ShoppingListRenderer {
                     path.lineTo(87, y - 9);
                     canvas.drawPath(path, tick);
                 }
-                canvas.drawText(row.emoji == null ? "🛒" : row.emoji, 101, y + 2, emoji);
+                String stickerValue = row.emoji == null ? "🛒" : row.emoji;
+                StickerCatalog.Sticker customSticker = StickerCatalog.fromValue(stickerValue);
+                if (customSticker != null) {
+                    Paint stickerBackground = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    stickerBackground.setColor(customSticker.background);
+                    canvas.drawRoundRect(100, y - 17, 128, y + 8, 5, 5, stickerBackground);
+                    Paint stickerText = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    stickerText.setColor(customSticker.foreground);
+                    stickerText.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+                    stickerText.setTextSize(9f);
+                    float labelWidth = stickerText.measureText(customSticker.badge);
+                    canvas.drawText(customSticker.badge, 114 - labelWidth / 2f, y, stickerText);
+                } else {
+                    canvas.drawText(stickerValue, 101, y + 2, emoji);
+                }
             }
             canvas.drawText(row.text == null ? "" : row.text, 136, y, body);
             y += row.firstOfItem ? 30f : 23f;
