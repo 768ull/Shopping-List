@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.Normalizer;
@@ -55,8 +57,12 @@ public final class EmojiCatalog {
         {"milho", "🌽"}, {"pepino", "🥒"}, {"pimentao", "🫑"},
         {"pimenta", "🌶️"}, {"cogumelo", "🍄"}, {"pao|bisnaga|torrada", "🍞"},
         {"queijo|mussarela|muçarela|requeijao", "🧀"}, {"ovo|ovos", "🥚"},
-        {"manteiga|margarina", "🧈"}, {"bacon|presunto|linguica|salsicha", "🥓"},
-        {"carne moida|carne|bife", "🥩"}, {"frango|peito de frango|sobrecoxa", "🍗"},
+        {"linguica calabresa|linguica toscana|linguica de frango|linguica defumada|linguica", "sticker:LINGUICA"},
+        {"salame italiano|salame", "sticker:SALAME"},
+        {"salsicha de frango|salsicha viena|salsicha", "sticker:SALSICHA"},
+        {"presunto|apresuntado", "sticker:PRESUNTO"}, {"mortadela", "sticker:MORTADELA"},
+        {"bacon", "🥓"}, {"carne moida|carne|bife", "🥩"},
+        {"frango|peito de frango|sobrecoxa", "🍗"},
         {"peixe|tilapia|sardinha", "🐟"}, {"camarao", "🍤"},
         {"macarrao|espaguete|massa", "🍝"}, {"sopa|miojo", "🍜"},
         {"sal|tempero", "🧂"}, {"mel", "🍯"}, {"biscoito|bolacha|cookie", "🍪"},
@@ -122,15 +128,21 @@ public final class EmojiCatalog {
         synchronized (EmojiCatalog.class) {
             if (cachedAll != null) return cachedAll;
             List<EmojiEntry> result = new ArrayList<>();
-            try (InputStream input = context.getAssets().open("emoji/emoji_catalog_pt.tsv");
-                 BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"), 8192)) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    int separator = line.indexOf('\t');
-                    if (separator <= 0 || separator >= line.length() - 1) continue;
-                    String glyph = line.substring(0, separator);
-                    String name = line.substring(separator + 1).trim();
-                    if (!glyph.isEmpty() && !name.isEmpty()) result.add(new EmojiEntry(glyph, name));
+            File downloaded = new File(context.getFilesDir(), "emoji_catalog_pt.tsv");
+            try {
+                InputStream source = downloaded.isFile() && downloaded.length() > 0
+                        ? new FileInputStream(downloaded)
+                        : context.getAssets().open("emoji/emoji_catalog_pt.tsv");
+                try (InputStream input = source;
+                     BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"), 8192)) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        int separator = line.indexOf('\t');
+                        if (separator <= 0 || separator >= line.length() - 1) continue;
+                        String glyph = line.substring(0, separator);
+                        String name = line.substring(separator + 1).trim();
+                        if (!glyph.isEmpty() && !name.isEmpty()) result.add(new EmojiEntry(glyph, name));
+                    }
                 }
                 if (result.isEmpty()) throw new IllegalStateException("Catálogo vazio.");
                 Collections.sort(result, Comparator.comparing((EmojiEntry entry) -> entry.searchable));
@@ -143,6 +155,13 @@ public final class EmojiCatalog {
             }
             cachedAll = Collections.unmodifiableList(result);
             return cachedAll;
+        }
+    }
+
+    /** Invalidates the in-memory index after a verified catalog download. */
+    public static void invalidate() {
+        synchronized (EmojiCatalog.class) {
+            cachedAll = null;
         }
     }
 
