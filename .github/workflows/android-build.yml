@@ -6,15 +6,15 @@ on:
       version_code:
         description: "Número de versão inteiro e maior que o publicado"
         required: true
-        default: "1"
+        default: "2"
       version_name:
         description: "Nome da versão (ex.: 1.0)"
         required: true
-        default: "1.0"
+        default: "1.0.1"
       changelog:
         description: "Notas da versão"
         required: true
-        default: "Primeira versão do Shopping List."
+        default: "Correção dos ícones adaptativos e estabilidade de atualização."
 
 concurrency:
   group: shopping-list-release
