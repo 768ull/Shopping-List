@@ -151,9 +151,12 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
                 "running shirt", "skis", "sled", "curling stone"
             }
         if subgroup == "game":
-            return any(term in normalized for term in
-                       ("game die", "puzzle piece", "joystick", "chess pawn",
-                        "playing cards", "mahjong"))
+            return normalized in {
+                "game die", "pool 8 ball", "puzzle piece", "joystick", "chess pawn",
+                "playing cards", "joker", "mahjong", "mahjong red dragon",
+                "yo-yo", "kite", "video game", "teddy bear", "nesting dolls",
+                "piñata", "mirror ball"
+            }
         if subgroup == "event":
             return any(term in normalized for term in
                        ("jack-o-lantern", "christmas tree", "fireworks", "sparkler",
