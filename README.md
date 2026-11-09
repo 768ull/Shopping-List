@@ -99,6 +99,12 @@ O backup leva títulos, produtos, posição, marcações de compra, emojis e ade
 
 **Depois dessa migração inicial**, as atualizações da versão oficial são instaladas por cima, sem desinstalar, desde que cada nova versão use o mesmo identificador `br.com.shoppinglist`, um `versionCode` maior e exatamente a mesma chave privada Release. O atualizador verifica o certificado antes de abrir o instalador do Android.
 
+## Histórico de versões do repositório
+
+Cada publicação oficial deve criar uma entrada própria no menu **Releases**, identificada por uma tag exclusiva (`v1.0.12`, `v1.0.13`, `v1.0.14` e assim por diante). Publicar uma atualização não apaga nem substitui as versões anteriores. O workflow recusa tags já existentes e não sobrescreve arquivos de uma Release existente.
+
+As entradas antigas só podem conter APK quando o arquivo daquela versão foi realmente compilado e publicado. Não são criados downloads fictícios para versões cujo APK não está disponível.
+
 ## Baixar o aplicativo oficial pelo GitHub Mobile
 
 As versões instaláveis oficiais ficam em **Releases** deste repositório. Baixe somente o arquivo **Shopping-Lists.apk** de uma versão publicada pelo workflow **Build Shopping Lists APK**. Não use **Code → Download ZIP**, artefatos de verificação ou APKs de teste: eles não são a distribuição oficial.
