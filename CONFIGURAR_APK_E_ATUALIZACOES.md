@@ -14,7 +14,7 @@ O arquivo `Shopping_List_Project_com_Atualizador.zip` permanece como cópia auxi
 - Android Gradle Plugin 9.5.0
 - Gradle 9.6.0
 
-O workflow utiliza a pasta versionada `android/`, testa o caminho do módulo e compila `:app:assembleRelease`.
+O workflow utiliza a pasta versionada `android/`, testa o caminho do módulo e compila `:app:assembleRelease` com R8 e redução de recursos ativados. O workflow de verificação também compila esse Release sem assinatura e confirma que o mapeamento do R8 foi gerado.
 
 ## Assinatura do APK
 
@@ -66,14 +66,29 @@ O workflow decodifica o keystore no diretório temporário `android/signing/`, c
 
 1. Configure os quatro Secrets acima.
 2. Abra **Actions → Build Shopping Lists APK → Run workflow**.
-3. Para a primeira publicação oficial desta base, use `version_code=12` e `version_name=1.0.11`, que correspondem à versão-base atual do projeto. O workflow Release exige que os quatro Secrets de assinatura estejam configurados.
+3. Para a primeira publicação oficial desta base, use `version_code=13` e `version_name=1.0.12`, que correspondem à versão-base atual do projeto. O workflow Release exige que os quatro Secrets de assinatura estejam configurados.
 4. O workflow compila, valida o APK, publica o Release e atualiza `update.json`.
 
 O pipeline confirma V1/V2/V3 com `apksigner` e exige o arquivo `.idsig` para V4.
 
+
+## Migrar as listas da versão Debug para o primeiro Release
+
+A compilação Debug tem o pacote Android `br.com.shoppinglist.debug`; a versão oficial tem `br.com.shoppinglist`. O Android não permite substituir um pacote pelo outro como se fossem a mesma instalação.
+
+1. Atualize o Debug atual para **1.0.12** (versionCode 13).
+2. Na tela inicial do Debug, use **SALVAR BACKUP** e escolha onde guardar o arquivo JSON.
+3. Instale o primeiro Release oficial. Não remova o Debug ainda.
+4. Abra o Release e use **RESTAURAR BACKUP** para importar o JSON. A restauração acrescenta as listas e não apaga as listas já presentes.
+5. Confira as listas, os produtos e os adesivos restaurados. Só depois disso remova o Debug antigo, se desejar.
+
+O backup inclui títulos, itens, ordem, marcações de comprado, emojis manuais e imagens PNG dos adesivos gerados localmente de até 4 MB por arquivo.
+
+A partir do primeiro Release, atualizações futuras não exigem desinstalação: mantenha o pacote `br.com.shoppinglist`, use um `versionCode` maior e assine sempre com o mesmo keystore Release.
+
 ## Publicar atualizações futuras
 
-Depois da publicação `version_code=12` / `version_name=1.0.11`, aumente o código a cada versão: 13, 14 e assim por diante. Os próximos nomes podem ser 1.0.12, 1.0.13 etc. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `Shopping-Lists.apk`, `Shopping-Lists.apk.idsig`, SHA-256 e atualiza o manifesto.
+Depois da publicação `version_code=13` / `version_name=1.0.12`, aumente o código a cada versão: 14, 15 e assim por diante. Os próximos nomes podem ser 1.0.13, 1.0.14 etc. Mantenha a mesma chave de distribuição usada na versão instalada. O workflow publica `Shopping-Lists.apk`, `Shopping-Lists.apk.idsig`, SHA-256 e atualiza o manifesto.
 
 O aplicativo consulta:
 `https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
