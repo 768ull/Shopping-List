@@ -265,7 +265,7 @@ def main() -> None:
     manifest = {
         "unicodeVersion": version,
         "emojiCount": len(rows),
-        "catalogSchema": 1,
+        "catalogSchema": 2,
         "catalogType": "shopping-products",
         "sha256": digest,
         "source": UNICODE_SOURCE,
