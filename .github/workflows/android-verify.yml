@@ -13,7 +13,7 @@ on:
       - ".github/workflows/android-verify.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   debug-build:
@@ -73,14 +73,19 @@ jobs:
           test -x "$AAPT"
           test -x "$APKSIGNER"
 
+          EXPECTED_VERSION_CODE="$(grep -m1 -oE 'versionCode[[:space:]]+[0-9]+' android/app/build.gradle | grep -oE '[0-9]+')"
+          EXPECTED_VERSION_NAME="$(grep -m1 -oE "versionName[[:space:]]+'[^']+'" android/app/build.gradle | sed -E "s/versionName[[:space:]]+'//; s/'$//")"
+          test -n "$EXPECTED_VERSION_CODE"
+          test -n "$EXPECTED_VERSION_NAME"
+
           mkdir -p verification-output
           cp "$APK" verification-output/ShoppingList-debug.apk
           unzip -tq verification-output/ShoppingList-debug.apk
 
           BADGING="$("$AAPT" dump badging verification-output/ShoppingList-debug.apk)"
-          printf '%s\\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist.debug' versionCode='5' versionName='1.0.4-debug'"
-          printf '%s\\n' "$BADGING" | grep -F "sdkVersion:'30'"
-          printf '%s\\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
+          printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist.debug' versionCode='${EXPECTED_VERSION_CODE}' versionName='${EXPECTED_VERSION_NAME}-debug'"
+          printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
+          printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
 
           "$APKSIGNER" verify --verbose --print-certs verification-output/ShoppingList-debug.apk 2>&1 | tee verification-output/signature-report.txt
           grep -Eiq "Verified using v2 scheme.*: true" verification-output/signature-report.txt
@@ -93,3 +98,33 @@ jobs:
           path: verification-output/*
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish Debug APK as direct download (test only)
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: debug-test
+          target_commitish: main
+          name: APK de teste do Shopping Lists (Debug)
+          prerelease: true
+          make_latest: false
+          body: |
+            Download direto do APK de teste (Debug) do Shopping Lists.
+
+            Baixe o arquivo ShoppingList-debug.apk abaixo e toque nele para instalar.
+
+            Nao baixe o ZIP de artefatos das Actions no celular: esse ZIP pode chegar
+            corrompido e o Android exibe "Ocorreu um problema ao analisar o pacote"
+            na instalacao do APK extraido.
+
+            Requisitos: Android 11 ou mais recente e processador 64 bits (arm64-v8a).
+
+            Confira a integridade comparando o hash do APK baixado com sha256.txt.
+            Se o Android recusar a instalacao por assinatura diferente, desinstale a
+            versao antiga do aplicativo de teste antes de instalar este APK.
+          files: |
+            verification-output/ShoppingList-debug.apk
+            verification-output/sha256.txt
+            verification-output/signature-report.txt
+          overwrite_files: true
+          fail_on_unmatched_files: true

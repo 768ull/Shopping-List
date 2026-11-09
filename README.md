@@ -77,13 +77,17 @@ A migração dos arquivos para `android/` e a limpeza do ZIP foram concluídas p
 
 O APK produzido por `android-verify.yml` é somente de teste e usa o identificador `br.com.shoppinglist.debug`. A assinatura Debug foi configurada para persistir no cache do GitHub Actions, com execução agendada para manter o cache ativo. Não use esse artefato como Release.
 
-A versão-base do projeto agora é `versionCode 2` / `1.0.1`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping Lists APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões.
+A versão-base do projeto agora é `versionCode 6` /`1.0.5`. A distribuição aos usuários deve ser feita pelo workflow `Build Shopping Lists APK`, com o pacote `br.com.shoppinglist` e a mesma chave privada guardada nos quatro Actions Secrets em todas as versões.
 
 **Limitação da primeira instalação Debug:** o primeiro APK Debug enviado em 9 de novembro de 2026 foi assinado com uma chave criada no runner temporário. Ela não foi armazenada. A assinatura dentro do APK contém apenas a chave pública, portanto não é possível reconstruir a chave privada nem assinar um APK de atualização compatível com aquela instalação. O Android bloqueia a substituição por outro certificado. O cache atual estabiliza as próximas compilações, mas não recupera a assinatura daquela primeira compilação.
+
+O APK de teste Debug agora também é publicado como download direto na release [debug-test](https://github.com/768ull/Shopping-List/releases/tag/debug-test). Baixe o arquivo `ShoppingList-debug.apk` direto dessa página e toque nele para instalar. O ZIP de artefatos das Actions (`ShoppingList-DEBUG-TEST-ONLY.zip`) continua disponível para inspeção, mas downloads grandes de artefatos costumam chegar corrompidos no celular; um APK extraído de um ZIP corrompido faz o Android exibir "Ocorreu um problema ao analisar o pacote" na instalação.
 
 ## Baixar o aplicativo pelo GitHub Mobile
 
 As versões instaláveis do Shopping Lists são publicadas na área **Releases** deste repositório. No aplicativo oficial do GitHub para Android, abra este repositório, entre em **Releases**, escolha a versão desejada e toque no arquivo **ShoppingList.apk** em **Assets**. Não use **Code → Download ZIP** para instalar: esse ZIP contém o código-fonte, não o aplicativo.
+
+Para o APK de teste Debug, abra a release **debug-test** e toque diretamente em **ShoppingList-debug.apk** em **Assets**. Evite baixar o ZIP de artefatos das Actions no celular: o download grande pode chegar truncado e o Android mostra "Ocorreu um problema ao analisar o pacote" ao instalar o APK extraído.
 
 - [Ver todas as versões publicadas (Releases)](https://github.com/768ull/Shopping-List/releases)
 - [Baixar a versão mais recente](https://github.com/768ull/Shopping-List/releases/latest)
