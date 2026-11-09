@@ -1,7 +1,8 @@
 {
   "unicodeVersion": "18.0",
   "emojiCount": 3963,
-  "sha256": "",
+  "sha256": "27fc96584f3c3031dedaa2085d6e5b37aed78e8da999a5a02806e4a7dabcf9c1",
   "source": "https://www.unicode.org/Public/emoji/latest/emoji-test.txt",
-  "sourceDate": "30 de abril de 2026"
+  "sourceDate": "2026-04-30, 22:40:18 GMT",
+  "generatedAt": "2026-11-09T17:24:27.243015+00:00"
 }
