@@ -14,12 +14,12 @@ Aplicativo Android nativo de lista de compras, com visual amarelo e página de c
 
 ## SDK e compatibilidade
 
-- `compileSdk = 37` (Android 17).
-- `targetSdk = 37`.
+- `compileSdk = 36` (Android 17).
+- `targetSdk = 36`.
 - `minSdk = 30` (Android 11).
 - Java + Views Android nativas, sem WebView ou Jetpack Compose.
 - Android Gradle Plugin 9.5.0, Gradle 9.6.0 e JDK 17.
-- Android SDK Platform 37.0 e Build Tools 36.0.0 no CI.
+- Android SDK Platform 36.0 e Build Tools 36.0.0 no CI.
 
 O SDK 37 é usado para compilar e direcionar o aplicativo. `minSdk 30` define a versão mínima instalável (Android 11).
 
@@ -64,7 +64,7 @@ O manifesto raiz e a cópia `android/update.json` começam sem APK oficial publi
 
 ## Compilações Debug e atualizações
 
-O artefato do workflow `Verify Shopping Lists Android` é somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele agora usa uma chave Debug persistida no cache do GitHub Actions, renovado por um agendamento periódico. A versão-base está em `versionCode 7` / `versionName 1.0.6`.
+O artefato do workflow `Verify Shopping Lists Android` é somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele agora usa uma chave Debug persistida no cache do GitHub Actions, renovado por um agendamento periódico. A versão-base está em `versionCode 8` / `versionName 1.0.7`.
 
 Não distribua esse artefato como atualização Release. Para atualizações de usuários, use o workflow `Build Shopping Lists APK`, com identificador `br.com.shoppinglist` e a mesma chave privada Release protegida nos Actions Secrets.
 
