@@ -153,7 +153,7 @@ public class MainActivity extends android.app.Activity {
         LinearLayout heading = new LinearLayout(this);
         heading.setOrientation(LinearLayout.VERTICAL);
         heading.setPadding(dp(12), 0, 0, 0);
-        TextView name = label("Shopping Lista", 27, INK, true);
+        TextView name = label("Shopping Lists", 27, INK, true);
         heading.addView(name);
         TextView tagline = label("Seu caderno de compras", 14, MUTED, false);
         heading.addView(tagline);
@@ -295,7 +295,7 @@ public class MainActivity extends android.app.Activity {
         });
         top.addView(back);
 
-        TextView appName = label("Shopping Lista", 17, INK, true);
+        TextView appName = label("Shopping Lists", 17, INK, true);
         appName.setGravity(Gravity.CENTER);
         top.addView(appName, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
@@ -930,7 +930,7 @@ public class MainActivity extends android.app.Activity {
         if (!isNetworkAvailable()) {
             new AlertDialog.Builder(this)
                     .setTitle("Sem conexão com a internet")
-                    .setMessage("O Shopping Lista funciona normalmente offline. Para verificar atualizações, conecte-se à internet e tente novamente.")
+                    .setMessage("O Shopping Lists funciona normalmente offline. Para verificar atualizações, conecte-se à internet e tente novamente.")
                     .setPositiveButton("OK", null)
                     .show();
             return;
@@ -946,7 +946,7 @@ public class MainActivity extends android.app.Activity {
             if (isFinishing()) return;
             if (update == null) {
                 new AlertDialog.Builder(this)
-                        .setTitle("Shopping Lista")
+                        .setTitle("Shopping Lists")
                         .setMessage(message == null ? "Não foi possível verificar atualizações." : message)
                         .setPositiveButton("OK", null)
                         .show();
