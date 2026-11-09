@@ -17,11 +17,12 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Offline Unicode Emoji 18.0 catalog plus a compact Portuguese product recognizer.
+ * Offline product-only Unicode Emoji 18.0 catalog plus a compact Portuguese product recognizer.
  * Recognition runs locally: no account, network, cloud API, or large language model.
  */
 public final class EmojiCatalog {
     public static final String UNICODE_VERSION = "18.0";
+    // Bump this when the curated catalog changes so old full catalogs are ignored.
     public static final int CATALOG_SCHEMA = 2;
     public static final int TOTAL_EMOJI_COUNT = 441;
     private static volatile List<EmojiEntry> cachedAll;
