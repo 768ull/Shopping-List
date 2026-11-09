@@ -1,5 +1,9 @@
 # Shopping List
 
+## 📦 [VERSÕES E DOWNLOADS — ABRIR NO GITHUB](https://github.com/768ull/Shopping-List/releases)
+
+Acesse esta seção pelo aplicativo GitHub para ver os lançamentos e baixar diretamente os arquivos **.APK** publicados. Use o arquivo APK individual do lançamento — não o ZIP de artefatos nem um arquivo **.AAB**, que é destinado à distribuição pela Play Store.
+
 Aplicativo Android nativo para criar e organizar listas de compras. Os dados das listas ficam localmente no aparelho; a internet é utilizada somente quando a pessoa solicita a verificação de atualizações.
 
 ## Estrutura do projeto
