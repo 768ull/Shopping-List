@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Baixar repositório
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Preparar Python
         uses: actions/setup-python@v5
@@ -33,9 +35,17 @@ jobs:
         run: python tools/update_unicode_emoji.py
 
       - name: Publicar alterações do catálogo
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Atualiza catálogo oficial Unicode Emoji"
-          file_pattern: |
-            android/app/src/main/assets/emoji/emoji_catalog_pt.tsv
-            android/app/src/main/assets/emoji/emoji_catalog_manifest.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android/app/src/main/assets/emoji/emoji_catalog_pt.tsv
+          git add android/app/src/main/assets/emoji/emoji_catalog_manifest.json
+          if git diff --cached --quiet; then
+            echo "O catálogo Unicode já está atualizado."
+            exit 0
+          fi
+          git commit -m "Atualiza catálogo oficial Unicode Emoji"
+          git pull --rebase origin main
+          git push origin HEAD:main
