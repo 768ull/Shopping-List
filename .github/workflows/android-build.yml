@@ -267,6 +267,16 @@ jobs:
           overwrite_files: true
           fail_on_unmatched_files: true
 
+      - name: Remover a prévia Debug depois da publicação oficial
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view debug-test >/dev/null 2>&1; then
+            gh release delete debug-test --yes --cleanup-tag
+          fi
+
       - name: Atualizar manifesto de atualização
         env:
           VERSION_CODE: ${{ inputs.version_code }}
