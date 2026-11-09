@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Synchronize the app emoji catalog with the current Unicode Emoji test data."""
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import sys
+import urllib.request
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+EMOJI_DIR = ROOT / "android/app/src/main/assets/emoji"
+CATALOG_PATH = EMOJI_DIR / "emoji_catalog_pt.tsv"
+MANIFEST_PATH = EMOJI_DIR / "emoji_catalog_manifest.json"
+
+UNICODE_SOURCE = "https://www.unicode.org/Public/emoji/latest/emoji-test.txt"
+CLDR_SOURCES = (
+    "https://raw.githubusercontent.com/unicode-org/cldr/main/common/annotations/pt.xml",
+    "https://raw.githubusercontent.com/unicode-org/cldr/main/common/annotationsDerived/pt.xml",
+)
+
+
+def download(url: str) -> bytes:
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "ShoppingList-Unicode-Catalog-Updater/1.0"},
+    )
+    with urllib.request.urlopen(request, timeout=45) as response:
+        return response.read()
+
+
+def read_existing_catalog() -> dict[str, str]:
+    existing: dict[str, str] = {}
+    if not CATALOG_PATH.exists():
+        return existing
+    for line in CATALOG_PATH.read_text(encoding="utf-8").splitlines():
+        if "\t" not in line:
+            continue
+        glyph, name = line.split("\t", 1)
+        if glyph and name.strip():
+            existing[glyph] = name.strip()
+    return existing
+
+
+def read_portuguese_cldr() -> dict[str, str]:
+    names: dict[str, str] = {}
+    for url in CLDR_SOURCES:
+        try:
+            root = ET.fromstring(download(url))
+            for node in root.iter("annotation"):
+                if node.attrib.get("type") == "tts":
+                    glyph = node.attrib.get("cp", "").strip()
+                    value = (node.text or "").strip()
+                    if glyph and value:
+                        names[glyph] = value
+        except Exception as error:
+            print(f"CLDR indisponível ({url}): {error}", file=sys.stderr)
+    return names
+
+
+def main() -> None:
+    raw = download(UNICODE_SOURCE).decode("utf-8")
+    version_match = re.search(r"^# Version:\s*([0-9.]+)", raw, re.MULTILINE)
+    if not version_match:
+        raise SystemExit("Não foi possível identificar a versão do arquivo oficial Unicode.")
+    version = version_match.group(1)
+    source_date_match = re.search(r"^# Date:\s*(.+)$", raw, re.MULTILINE)
+    source_date = source_date_match.group(1).strip() if source_date_match else ""
+
+    existing = read_existing_catalog()
+    cldr_names = read_portuguese_cldr()
+    rows: list[tuple[str, str]] = []
+    seen: set[str] = set()
+
+    for line in raw.splitlines():
+        if not line or line.startswith("#") or ";" not in line or "#" not in line:
+            continue
+        data, comment = line.split("#", 1)
+        fields = data.split(";")
+        if len(fields) < 2 or fields[1].strip() != "fully-qualified":
+            continue
+
+        codepoints = fields[0].strip().split()
+        if not codepoints:
+            continue
+        glyph = "".join(chr(int(codepoint, 16)) for codepoint in codepoints)
+        if glyph in seen:
+            continue
+        seen.add(glyph)
+
+        unicode_name = re.sub(r"^\s*\S+\s+E[0-9.]+\s+", "", comment).strip()
+        name = existing.get(glyph) or cldr_names.get(glyph) or unicode_name or glyph
+        rows.append((glyph, name))
+
+    if len(rows) < 1000:
+        raise SystemExit(f"Catálogo inesperadamente pequeno: {len(rows)} emojis.")
+
+    tsv = "".join(f"{glyph}\t{name}\n" for glyph, name in rows).encode("utf-8")
+    digest = hashlib.sha256(tsv).hexdigest()
+    CATALOG_PATH.write_bytes(tsv)
+
+    manifest = {
+        "unicodeVersion": version,
+        "emojiCount": len(rows),
+        "sha256": digest,
+        "source": UNICODE_SOURCE,
+        "sourceDate": source_date,
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+    }
+    MANIFEST_PATH.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Unicode Emoji {version}: {len(rows)} emojis; SHA-256 {digest}")
+
+
+if __name__ == "__main__":
+    main()
