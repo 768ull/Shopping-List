@@ -1001,7 +1001,7 @@ public class MainActivity extends android.app.Activity {
                     PdfDocument.PageInfo info = new PdfDocument.PageInfo.Builder(
                             ShoppingListRenderer.PAGE_WIDTH, ShoppingListRenderer.PAGE_HEIGHT, i + 1).create();
                     PdfDocument.Page page = document.startPage(info);
-                    ShoppingListRenderer.drawPage(page.getCanvas(), export.title, export.pages.get(i),
+                    ShoppingListRenderer.drawPage(this, page.getCanvas(), export.title, export.pages.get(i),
                             i + 1, export.pages.size());
                     document.finishPage(page);
                 }
@@ -1036,7 +1036,7 @@ public class MainActivity extends android.app.Activity {
                     String filename = base + "_pagina_" + String.format(Locale.ROOT, "%02d", i + 1) + ".png";
                     Uri file = DocumentsContract.createDocument(resolver, parent, "image/png", filename);
                     if (file == null) throw new IllegalStateException("Não foi possível criar " + filename);
-                    android.graphics.Bitmap bitmap = ShoppingListRenderer.renderImage(export.title,
+                    android.graphics.Bitmap bitmap = ShoppingListRenderer.renderImage(this, export.title,
                             export.pages.get(i), i + 1, export.pages.size());
                     try (OutputStream output = resolver.openOutputStream(file, "w")) {
                         if (output == null) throw new IllegalStateException("Não foi possível gravar " + filename);
