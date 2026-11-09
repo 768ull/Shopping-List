@@ -6,11 +6,11 @@ on:
       version_code:
         description: "Número de versão inteiro e maior que o publicado"
         required: true
-        default: "7"
+        default: "8"
       version_name:
         description: "Nome da versão (ex.: 1.0)"
         required: true
-        default: "1.0.6"
+        default: "1.0.7"
       changelog:
         description: "Notas da versão"
         required: true
@@ -154,7 +154,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
