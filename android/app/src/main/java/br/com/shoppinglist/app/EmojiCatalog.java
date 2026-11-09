@@ -153,12 +153,36 @@ public final class EmojiCatalog {
         List<EmojiEntry> result = new ArrayList<>();
         if (q.isEmpty()) return quick(context);
         for (EmojiEntry entry : all(context)) {
-            if (normalize(entry.name).contains(q)) {
+            if (normalize(entry.name).contains(q) || normalize(searchAliases(entry.emoji)).contains(q)) {
                 result.add(entry);
                 if (result.size() >= limit) break;
             }
         }
         return result;
+    }
+
+    private static String searchAliases(String glyph) {
+        if ("🫘".equals(glyph)) return "feijao feijoes graos leguminosas";
+        if ("🍚".equals(glyph)) return "arroz arroz cozido arroz branco";
+        if ("📺".equals(glyph)) return "tv televisao televisão";
+        if ("💻".equals(glyph)) return "notebook computador laptop pc";
+        if ("🧴".equals(glyph)) return "detergente desinfetante agua sanitaria shampoo xampu loção";
+        if ("🧼".equals(glyph)) return "sabao sabonete sabão";
+        if ("🧽".equals(glyph)) return "esponja limpeza";
+        if ("🔋".equals(glyph)) return "bateria pilha pilhas";
+        if ("🧹".equals(glyph)) return "vassoura limpeza";
+        if ("🧻".equals(glyph)) return "papel higienico papel toalha guardanapo";
+        if ("🪥".equals(glyph)) return "escova de dente pasta de dente higiene bucal";
+        if ("📱".equals(glyph)) return "celular smartphone telefone tablet";
+        if ("🎧".equals(glyph)) return "fone fone de ouvido headphone headset";
+        if ("🔌".equals(glyph)) return "carregador cabo usb tomada adaptador";
+        if ("🍗".equals(glyph)) return "frango galinha";
+        if ("🥩".equals(glyph)) return "carne bife carne moida";
+        if ("🐟".equals(glyph)) return "peixe tilapia sardinha";
+        if ("🥛".equals(glyph)) return "leite iogurte creme de leite";
+        if ("🧸".equals(glyph)) return "pelucia ursinho brinquedo";
+        if ("📦".equals(glyph)) return "caixa embalagem pacote";
+        return "";
     }
 
     /** Lightweight on-device product recognition: synonyms + accents + one/two-letter typo tolerance. */
