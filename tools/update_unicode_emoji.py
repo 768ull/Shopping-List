@@ -27,7 +27,7 @@ PRODUCT_SUBGROUPS = {
     "Food & Drink": {"food-fruit", "food-vegetable", "food-prepared", "food-asian",
                      "food-marine", "food-sweet", "drink", "dishware"},
     "Objects": {"clothing", "sound", "music", "musical-instrument", "phone",
-                "computer", "light & video", "book-paper", "writing", "office",
+                "computer", "light & video", "book-paper", "writing", "office", "mail",
                 "lock", "tool", "medical", "household"},
 }
 
@@ -136,6 +136,8 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
                        ("automobile", "motorcycle", "motor scooter", "scooter",
                         "bicycle", "skateboard", "roller skate", "kick scooter",
                         "wheel", "pickup truck", "fuel pump", "wheelchair"))
+        if subgroup == "hotel":
+            return normalized == "luggage"
         return normalized == "droplet"
 
     # Activity symbols are included only when the glyph is itself a physical toy,
@@ -186,6 +188,12 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
         if subgroup == "music":
             return any(term in normalized for term in
                        ("microphone", "headphone", "radio", "musical keyboard"))
+        if subgroup == "mail":
+            return normalized in {
+                "package", "envelope", "closed mailbox with raised flag",
+                "closed mailbox with lowered flag", "open mailbox with raised flag",
+                "open mailbox with lowered flag", "postbox"
+            }
         if subgroup == "lock":
             return any(term in normalized for term in ("lock", "key"))
         if subgroup == "light & video":
