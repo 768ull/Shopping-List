@@ -34,8 +34,11 @@ public final class EmojiCatalogUpdater {
     }
 
     public static int getEmojiCount(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getInt("count", EmojiCatalog.TOTAL_EMOJI_COUNT);
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        if (prefs.getInt("catalog_schema", 0) != EmojiCatalog.CATALOG_SCHEMA) {
+            return EmojiCatalog.TOTAL_EMOJI_COUNT;
+        }
+        return prefs.getInt("count", EmojiCatalog.TOTAL_EMOJI_COUNT);
     }
 
     /** Checks in the background at most twice per day. No dialog or blocking network call. */
