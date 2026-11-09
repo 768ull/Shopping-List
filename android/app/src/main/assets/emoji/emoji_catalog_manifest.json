@@ -1,10 +1,10 @@
 {
   "unicodeVersion": "18.0",
-  "emojiCount": 3963,
+  "emojiCount": 412,
   "catalogSchema": 1,
   "catalogType": "shopping-products",
-  "sha256": "27fc96584f3c3031dedaa2085d6e5b37aed78e8da999a5a02806e4a7dabcf9c1",
+  "sha256": "b317cc22f128c378b163eba6b781220fa2439c65f3c81d84cbe461e749695b85",
   "source": "https://www.unicode.org/Public/emoji/latest/emoji-test.txt",
   "sourceDate": "2026-04-30, 22:40:18 GMT",
-  "generatedAt": "2026-11-09T21:09:00.149670+00:00"
+  "generatedAt": "2026-11-09T21:09:30.583769+00:00"
 }
