@@ -7,7 +7,7 @@ package br.com.shoppinglist.app;
 final class UpdateConfig {
     private UpdateConfig() { }
 
-    // Repositório reservado para as futuras versões do Shopping List.
+    // Repositório reservado para as futuras versões do Shopping Lists.
     static final String MANIFEST_URL =
             "https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json";
 
