@@ -27,7 +27,7 @@ public final class StickerCatalog {
     }
 
     private static final Sticker[] ITEMS = {
-        new Sticker("OUTRO", "Produto sem categoria", "•", 0xFFE9E2D5, 0xFF594B38),
+        new Sticker("OUTRO", "Produto sem categoria", "PR", 0xFFE9E2D5, 0xFF594B38),
         new Sticker("ALIMENTO", "Alimentos e ingredientes", "AL", 0xFFFFE4B8, 0xFF8B4A18),
         new Sticker("LIMPEZA", "Limpeza", "LZ", 0xFFDDF2EA, 0xFF176B51),
         new Sticker("ELETRONICO", "Eletrônicos e acessórios", "EL", 0xFFDDEBFF, 0xFF28558F),
