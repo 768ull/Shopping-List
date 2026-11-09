@@ -8,12 +8,17 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.DocumentsContract;
 import android.view.Gravity;
 import android.view.View;
@@ -42,6 +47,9 @@ import android.graphics.pdf.PdfDocument;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.lang.ref.WeakReference;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -69,6 +77,8 @@ public class MainActivity extends android.app.Activity {
     private boolean autoEmoji = true;
     private boolean changingTitle = false;
     private PendingExport pendingExport;
+    private final Handler productAiHandler = new Handler(Looper.getMainLooper());
+    private final Map<Long, Runnable> pendingProductAi = new HashMap<>();
 
     private static final class PendingExport {
         String title;
@@ -87,6 +97,15 @@ public class MainActivity extends android.app.Activity {
         setContentView(root);
         applyImmersiveMode();
         showHome();
+    }
+
+    @Override
+    protected void onDestroy() {
+        for (Runnable pending : pendingProductAi.values()) {
+            productAiHandler.removeCallbacks(pending);
+        }
+        pendingProductAi.clear();
+        super.onDestroy();
     }
 
     private void applyImmersiveMode() {
@@ -469,6 +488,7 @@ public class MainActivity extends android.app.Activity {
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String value = s.toString();
                 database.setItemText(item.id, value);
+                item.text = value;
                 if (autoEmoji && !item.emojiManual) {
                     String detected = EmojiCatalog.automatic(value);
                     if (!detected.equals(item.emoji)) {
@@ -476,6 +496,9 @@ public class MainActivity extends android.app.Activity {
                         database.setItemEmoji(item.id, detected, false);
                         renderSticker(sticker, detected);
                     }
+                    scheduleProductAi(item, input, sticker, value, detected);
+                } else {
+                    cancelProductAi(item.id);
                 }
             }
             @Override public void afterTextChanged(Editable s) { }
@@ -497,7 +520,105 @@ public class MainActivity extends android.app.Activity {
         return row;
     }
 
+    private void scheduleProductAi(
+            AppDatabase.ShoppingItem item,
+            EditText input,
+            TextView sticker,
+            String rawText,
+            String fallbackValue
+    ) {
+        cancelProductAi(item.id);
+        String product = rawText == null ? "" : rawText.trim();
+        if (product.length() < 3 || !StickerCatalog.isSticker(fallbackValue)) return;
+
+        Runnable request = () -> {
+            pendingProductAi.remove(item.id);
+            if (isFinishing() || !autoEmoji || item.emojiManual) return;
+            String currentText = input.getText() == null ? "" : input.getText().toString().trim();
+            if (!product.equals(currentText)) return;
+            if (!StickerCatalog.isSticker(item.emoji)) return;
+
+            item.emoji = "🧠";
+            database.setItemEmoji(item.id, item.emoji, false);
+            renderSticker(sticker, item.emoji);
+
+            WeakReference<MainActivity> activityRef = new WeakReference<>(this);
+            WeakReference<EditText> inputRef = new WeakReference<>(input);
+            WeakReference<TextView> stickerRef = new WeakReference<>(sticker);
+            ProductAiEngine.process(getApplicationContext(), product, new ProductAiEngine.Callback() {
+                @Override public void onStatus(String message) {
+                    MainActivity activity = activityRef.get();
+                    TextView target = stickerRef.get();
+                    EditText editor = inputRef.get();
+                    if (activity == null || activity.isFinishing() || target == null || editor == null) return;
+                    String current = editor.getText() == null ? "" : editor.getText().toString().trim();
+                    if (!product.equals(current) || item.emojiManual) return;
+                    target.setContentDescription(message);
+                    if (message.toLowerCase(Locale.ROOT).contains("criando adesivo")
+                            || message.toLowerCase(Locale.ROOT).contains("baixando ia de imagens")) {
+                        target.setText("🎨");
+                        target.setCompoundDrawables(null, null, null, null);
+                    }
+                }
+
+                @Override public void onResult(String result) {
+                    MainActivity activity = activityRef.get();
+                    EditText editor = inputRef.get();
+                    TextView target = stickerRef.get();
+                    if (activity == null || activity.isFinishing() || editor == null) return;
+                    String current = editor.getText() == null ? "" : editor.getText().toString().trim();
+                    if (!product.equals(current) || item.emojiManual || !activity.autoEmoji) return;
+                    item.emoji = result;
+                    activity.database.setItemEmoji(item.id, result, false);
+                    if (target != null && target.isAttachedToWindow()) {
+                        activity.renderSticker(target, result);
+                    }
+                }
+
+                @Override public void onError(String message) {
+                    MainActivity activity = activityRef.get();
+                    EditText editor = inputRef.get();
+                    TextView target = stickerRef.get();
+                    if (activity == null || activity.isFinishing() || editor == null) return;
+                    String current = editor.getText() == null ? "" : editor.getText().toString().trim();
+                    if (!product.equals(current) || item.emojiManual || !activity.autoEmoji) return;
+                    item.emoji = fallbackValue;
+                    activity.database.setItemEmoji(item.id, fallbackValue, false);
+                    if (target != null && target.isAttachedToWindow()) {
+                        activity.renderSticker(target, fallbackValue);
+                    }
+                    Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
+                }
+            });
+        };
+        pendingProductAi.put(item.id, request);
+        productAiHandler.postDelayed(request, 1400L);
+    }
+
+    private void cancelProductAi(long itemId) {
+        Runnable pending = pendingProductAi.remove(itemId);
+        if (pending != null) productAiHandler.removeCallbacks(pending);
+    }
+
     private void renderSticker(TextView view, String value) {
+        if (ProductAiEngine.isGenerated(value)) {
+            java.io.File imageFile = ProductAiEngine.generatedFile(this, value);
+            Bitmap image = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+            if (image != null) {
+                int imageSize = dp(34);
+                Bitmap scaled = Bitmap.createScaledBitmap(image, imageSize, imageSize, true);
+                if (scaled != image) image.recycle();
+                BitmapDrawable drawable = new BitmapDrawable(getResources(), scaled);
+                drawable.setBounds(0, 0, imageSize, imageSize);
+                view.setText("");
+                view.setCompoundDrawablePadding(0);
+                view.setCompoundDrawables(null, drawable, null, null);
+                view.setBackground(roundDrawable(Color.WHITE, dp(12), Color.rgb(242, 220, 174), dp(1)));
+                view.setContentDescription("Adesivo gerado localmente");
+                return;
+            }
+        }
+        view.setCompoundDrawables(null, null, null, null);
         StickerCatalog.Sticker custom = StickerCatalog.fromValue(value);
         if (custom != null) {
             view.setText(custom.badge);
