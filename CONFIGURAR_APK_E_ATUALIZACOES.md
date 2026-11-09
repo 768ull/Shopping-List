@@ -99,10 +99,14 @@ O atualizador verifica HTTPS, SHA-256, identificador do pacote, versão e certif
 
 As bibliotecas nativas de IA são empacotadas com compressão ZIP para reduzir o tamanho do download. Os workflows verificam a integridade ZIP, a presença de bibliotecas ARM64 e se elas estão comprimidas antes de publicar o arquivo. O Android extrai as bibliotecas nativas durante a instalação.
 
-## Compilação Debug e assinatura persistente
+## Verificação automatizada do Release
 
-O workflow `Verify Shopping Lists Android` gera somente um APK de teste com identificador `br.com.shoppinglist.debug`. Ele não deve ser tratado como APK de distribuição. A chave Debug é guardada no cache do GitHub Actions, com builds serializados e execução agendada para manter esse cache ativo. A assinatura Debug atual tem fingerprint SHA-256 `92cc0214682fe7b5c8310703f9dc22143264baf383a95acd8775867db77949a4`. Isso mantém futuras compilações Debug compatíveis enquanto o cache existir.
+O workflow `Verify Shopping Lists Release` compila somente a variante `release`, verifica o pacote `br.com.shoppinglist`, a versão, a integridade do APK, a compressão das bibliotecas nativas e a geração do mapeamento R8. Também rejeita versões com sufixo `-debug` e APKs marcados como `debuggable`.
 
-**Atenção para a instalação Debug feita antes dessa correção:** a primeira compilação Debug (run 42650212939) foi assinada com uma chave aleatória gerada no runner temporário do GitHub, que não foi armazenada. Essa chave privada não está dentro do APK e não pode ser reconstruída a partir do certificado. Portanto, um APK assinado com a nova chave persistente não consegue atualizar aquela instalação. Não existe uma alteração de Gradle ou do APK que contorne a verificação de assinatura do Android.
+Esse workflow é apenas uma verificação automatizada: o candidato gerado não tem assinatura e não é publicado como download. Nenhum APK Debug é publicado por esse fluxo.
 
-As atualizações normais distribuídas aos usuários devem usar o workflow Release, o pacote `br.com.shoppinglist` e os quatro Secrets de assinatura privada. Nunca use artefatos Debug como atualizações de Release.
+## Publicação oficial
+
+Somente o workflow `Build Shopping Lists APK` publica uma versão instalável. Ele exige os quatro Secrets de assinatura privada, gera o APK Release otimizado, verifica as assinaturas V1/V2/V3/V4 e publica `Shopping-Lists.apk`, a assinatura V4 e o SHA-256.
+
+A primeira publicação oficial desta base usa `version_code=13` e `version_name=1.0.12`. Depois dela, cada atualização deve usar um `versionCode` maior e manter exatamente o mesmo keystore Release para permitir a atualização por cima, sem desinstalar o aplicativo.
