@@ -28,6 +28,16 @@ public final class StickerCatalog {
 
     private static final Sticker[] ITEMS = {
         new Sticker("OUTRO", "Produto sem categoria", "🛍️", 0xFFE9E2D5, 0xFF594B38),
+        new Sticker("BEBIDA", "Bebidas", "🥤", 0xFFDDF0FF, 0xFF28558F),
+        new Sticker("AGUA", "Água mineral", "💧", 0xFFDDF2FF, 0xFF236B9B),
+        new Sticker("SUCO", "Sucos e néctares", "🧃", 0xFFFFE6B8, 0xFF9A571C),
+        new Sticker("REFRIGERANTE", "Refrigerantes e energéticos", "🥤", 0xFFFFDDE2, 0xFF9B3F52),
+        new Sticker("CAFE", "Café", "☕", 0xFFE9D9CA, 0xFF704326),
+        new Sticker("CHA", "Chás e infusões", "🍵", 0xFFDDF0D8, 0xFF376B36),
+        new Sticker("LEITE", "Leites e bebidas lácteas", "🥛", 0xFFE3F0FF, 0xFF41658A),
+        new Sticker("CERVEJA", "Cervejas", "🍺", 0xFFFFE8B8, 0xFF8A5B16),
+        new Sticker("VINHO", "Vinhos e espumantes", "🍷", 0xFFF5DDE5, 0xFF84364A),
+        new Sticker("DESTILADO", "Bebidas destiladas", "🥃", 0xFFFFE3C2, 0xFF87501F),
         new Sticker("ALIMENTO", "Alimentos e ingredientes", "🍎", 0xFFFFE4B8, 0xFF8B4A18),
         new Sticker("LINGUICA", "Linguiça", "🌭", 0xFFFFE2C2, 0xFF8D4527),
         new Sticker("SALAME", "Salame", "🍖", 0xFFFFD9D2, 0xFF923D37),
@@ -85,6 +95,44 @@ public final class StickerCatalog {
                 "limpador", "desengordurante", "amaciante", "sabao em po", "sabao liquido",
                 "alvejante", "amaciante", "lustra moveis", "limpa vidro", "cera", "polidor", "vassoura", "rodo", "balde", "pano de chao", "pano de limpeza", "saco de lixo", "inseticida", "luva de limpeza", "escova de limpeza", "produto de limpeza", "material de limpeza"))
             return "sticker:LIMPEZA";
+
+        // Bebidas comerciais e nomes de marcas: classifica como bebida e deixa
+        // a IA semântica refinar o produto, em vez de cair no sticker genérico 🛍️.
+        if (hasAny(s, "agua sanitaria", "cloro", "alvejante", "desinfetante")) {
+            return "sticker:LIMPEZA";
+        }
+        if (hasAny(s, "agua mineral", "agua com gas", "agua sem gas", "agua potavel",
+                "garrafa de agua", "agua natural")) return "sticker:AGUA";
+        if (hasAny(s, "agua de coco", "suco de coco")) return "sticker:SUCO";
+        if (hasAny(s, "suco", "nectar", "refresco", "polpa de fruta", "bebida de fruta")) {
+            return "sticker:SUCO";
+        }
+        if (hasAny(s, "coca cola", "coca-cola", "coca", "pepsi", "guarana",
+                "guarana antarctica", "guarana antartica", "fanta", "sprite", "7 up",
+                "schweppes", "soda", "refrigerante", "refri", "agua tonica",
+                "tonica", "energetico", "red bull", "monster energy", "gatorade",
+                "powerade", "isotonico", "bebida gaseificada", "bebida energetica")) {
+            return "sticker:REFRIGERANTE";
+        }
+        if (hasAny(s, "cerveja", "pilsen", "lager", "ipa", "long neck", "chopp", "chope")) {
+            return "sticker:CERVEJA";
+        }
+        if (hasAny(s, "vinho", "espumante", "champanhe", "champagne", "rose")) {
+            return "sticker:VINHO";
+        }
+        if (hasAny(s, "vodka", "whisky", "uisque", "rum", "gin", "tequila", "cachaca",
+                "cachaça", "conhaque", "destilado")) return "sticker:DESTILADO";
+        if (hasAny(s, "cafe", "cafe em po", "cafe soluvel", "capsula de cafe",
+                "capuccino", "cappuccino", "espresso")) return "sticker:CAFE";
+        if (hasAny(s, "cha", "cha gelado", "cha mate", "mate", "infusao")) {
+            return "sticker:CHA";
+        }
+        if (hasAny(s, "leite", "achocolatado", "nescau", "toddy", "yakult",
+                "leite fermentado", "bebida lactea", "iogurte liquido", "leite vegetal")) {
+            return "sticker:LEITE";
+        }
+        if (hasAny(s, "bebida", "drink")) return "sticker:BEBIDA";
+
         if (hasAny(s, "celular", "telefone", "smartphone", "televisao", "tv", "computador",
                 "notebook", "laptop", "tablet", "mouse", "teclado", "carregador", "cabo usb",
                 "tomada", "fone", "headphone", "caixa de som", "camera", "roteador", "console", "cabo hdmi", "controle remoto", "webcam", "microfone", "smartwatch", "monitor", "capinha de celular", "pelicula de celular", "cartao de memoria",
