@@ -6,15 +6,15 @@ on:
       version_code:
         description: "Número de versão inteiro e maior que o publicado"
         required: true
-        default: "9"
+        default: "10"
       version_name:
         description: "Nome da versão (ex.: 1.0)"
         required: true
-        default: "1.0.8"
+        default: "1.0.9"
       changelog:
         description: "Notas da versão"
         required: true
-        default: "Reconhecimento semântico local de produtos, geração local de adesivos kawaii, modelos baixados separadamente e catálogo Unicode automático."
+        default: "Catálogo filtrado com 436 emojis de produtos, reconhecimento local aprimorado de alimentos e bebidas por nomes e marcas, proteção contra emojis genéricos e indicador visível da IA local de entendimento e criação de imagens."
 
 concurrency:
   group: shopping-list-release
