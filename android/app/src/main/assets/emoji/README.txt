@@ -1,19 +1,29 @@
-Shopping Lists — Catálogo de emojis
+Shopping Lists — Catálogo de emojis de produtos
 
 Versão dos dados: Unicode Emoji 18.0 (15 de setembro de 2026).
+O aplicativo não carrega o catálogo inteiro de emojis Unicode. O seletor contém somente
+ícones filtrados que representam produtos físicos que podem aparecer em uma lista de compras.
 
-Arquivos:
-- emoji.json: inventário de sequências e status, usado para selecionar somente emojis fully-qualified.
-- emoji_pt.json: nomes/localizações em português para a pesquisa no seletor.
-- EmojiSequences.txt: sequências Unicode Emoji 18.0 totalmente qualificadas e minimamente qualificadas, com registros de componentes.
+Arquivos usados pelo aplicativo:
+- emoji_catalog_pt.tsv: emojis de produtos e seus nomes para pesquisa em português.
+- emoji_catalog_manifest.json: versão Unicode, tipo/esquema do catálogo, quantidade e SHA-256.
+
+O gerador em tools/update_unicode_emoji.py lê a lista oficial Unicode e aplica uma lista
+de subcategorias permitidas, removendo rostos, pessoas, gestos, bandeiras, símbolos de
+estado/ação e animais que não representam mercadorias. O catálogo é atualizado pelo
+GitHub Actions e o aplicativo verifica a versão publicada em segundo plano.
+
+Integração com teclados:
+Gboard, Microsoft SwiftKey e outros teclados Android podem inserir emojis Unicode no
+campo de texto do aplicativo. O Shopping Lists não importa os pacotes privados de cada
+teclado; valida o caractere inserido contra o catálogo de produtos para impedir emojis
+fora da finalidade de compras.
 
 Fontes:
 - Unicode Emoji 18.0: https://www.unicode.org/Public/18.0.0/emoji/emoji-test.txt
-- Unicode Emoji 18.0 sequences: https://www.unicode.org/Public/18.0.0/emoji/emoji-sequences.txt
-- Unicode Emoji 18.0 ZWJ sequences: https://www.unicode.org/Public/18.0.0/emoji/emoji-zwj-sequences.txt
-- Dados de nomes em português: https://github.com/carpedm20/emoji
-- Inventário de sequências: Apache OpenNLP, commit bcec97f6f0a6e109f2fdaca2a3b07f9c11f17ed9.
+- Unicode Emoji sequences: https://www.unicode.org/Public/18.0.0/emoji/emoji-sequences.txt
+- Unicode Emoji ZWJ sequences: https://www.unicode.org/Public/18.0.0/emoji/emoji-zwj-sequences.txt
+- Dados de nomes em português: projeto CLDR, https://github.com/unicode-org/cldr
 
-Os dados Unicode estão cobertos pela licença Unicode V3 incluída nesta pasta.
-Os nomes em português são fornecidos para facilitar a pesquisa local.
-O arquivo de sequências informa os caracteres; ele não contém fontes gráficas. A aparência final depende da fonte de emojis do Android ou do dispositivo.
+Os arquivos Unicode estão cobertos pela licença Unicode V3 incluída nesta pasta.
+A aparência final de cada emoji depende da fonte de emojis disponível no Android.
