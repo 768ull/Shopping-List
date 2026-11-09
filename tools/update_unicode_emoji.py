@@ -206,12 +206,17 @@ def main() -> None:
             continue
         seen.add(glyph)
 
-        unicode_name = re.sub(r"^\s*\S+\s+E[0-9.]+\s+", "", comment).strip()
+        unicode_name = re.sub(r"^\\s*\\S+\\s+E[0-9.]+\\s+", "", comment).strip()
+        if not is_product_emoji(current_group, current_subgroup, unicode_name):
+            continue
         name = existing.get(glyph) or cldr_names.get(glyph) or unicode_name or glyph
         rows.append((glyph, name))
 
-    if len(rows) < 1000:
-        raise SystemExit(f"Catálogo inesperadamente pequeno: {len(rows)} emojis.")
+    if not 100 <= len(rows) <= 1000:
+        raise SystemExit(f"Catálogo de produtos fora do intervalo esperado: {len(rows)} emojis.")
+    names = {name.casefold() for _, name in rows}
+    if any("brain" in name or "cérebro" in name for name in names):
+        raise SystemExit("O catálogo filtrado incluiu indevidamente o emoji de cérebro.")
 
     tsv = "".join(f"{glyph}\t{name}\n" for glyph, name in rows).encode("utf-8")
     digest = hashlib.sha256(tsv).hexdigest()
