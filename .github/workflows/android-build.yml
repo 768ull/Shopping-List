@@ -196,11 +196,11 @@ jobs:
           test -x "$AAPT"
 
           mkdir -p release-files
-          cp "$APK" release-files/ShoppingList.apk
-          unzip -tq release-files/ShoppingList.apk
+          cp "$APK" release-files/Shopping-Lists.apk
+          unzip -tq release-files/Shopping-Lists.apk
           python3 - <<'PY'
           from zipfile import ZipFile, ZIP_STORED
-          apk = "release-files/ShoppingList.apk"
+          apk = "release-files/Shopping-Lists.apk"
           with ZipFile(apk) as archive:
               broken = archive.testzip()
               if broken:
@@ -212,7 +212,7 @@ jobs:
               if stored:
                   raise SystemExit("Bibliotecas nativas continuam sem compressão: " + ", ".join(stored[:5]))
           PY
-          BADGING="$("$AAPT" dump badging release-files/ShoppingList.apk)"
+          BADGING="$("$AAPT" dump badging release-files/Shopping-Lists.apk)"
           printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${VERSION_CODE}' versionName='${VERSION_NAME}'"
           printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
           printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
@@ -220,9 +220,9 @@ jobs:
             echo "::error::A assinatura V4 não foi gerada. Verifique a configuração Android Gradle do módulo."
             exit 1
           fi
-          cp "$APK.idsig" release-files/ShoppingList.apk.idsig
+          cp "$APK.idsig" release-files/Shopping-Lists.apk.idsig
 
-          "$APKSIGNER" verify --verbose --print-certs release-files/ShoppingList.apk 2>&1 | tee release-files/signature-report.txt
+          "$APKSIGNER" verify --verbose --print-certs release-files/Shopping-Lists.apk 2>&1 | tee release-files/signature-report.txt
           for scheme in v1 v2 v3; do
             if ! grep -Eiq "Verified using ${scheme} scheme.*: true" release-files/signature-report.txt; then
               echo "::error::A assinatura ${scheme^^} não foi confirmada."
@@ -230,16 +230,16 @@ jobs:
             fi
           done
 
-          sha256sum release-files/ShoppingList.apk | awk '{print $1}' > release-files/sha256.txt
+          sha256sum release-files/Shopping-Lists.apk | awk '{print $1}' > release-files/sha256.txt
           echo "APK validado. Assinatura V4 confirmada pela presença do arquivo .idsig."
 
       - name: Guardar APK como artefato de compilação
         uses: actions/upload-artifact@v4
         with:
-          name: ShoppingList-APK-${{ inputs.version_name }}
+          name: Shopping-Lists-APK-${{ inputs.version_name }}
           path: |
-            release-files/ShoppingList.apk
-            release-files/ShoppingList.apk.idsig
+            release-files/Shopping-Lists.apk
+            release-files/Shopping-Lists.apk.idsig
             release-files/sha256.txt
             release-files/signature-report.txt
           if-no-files-found: error
@@ -261,8 +261,8 @@ jobs:
           name: Shopping Lists v${{ inputs.version_name }}
           body_path: release-files/CHANGELOG.md
           files: |
-            release-files/ShoppingList.apk
-            release-files/ShoppingList.apk.idsig
+            release-files/Shopping-Lists.apk
+            release-files/Shopping-Lists.apk.idsig
             release-files/sha256.txt
           overwrite_files: true
           fail_on_unmatched_files: true
@@ -282,12 +282,12 @@ jobs:
           import os
           from pathlib import Path
 
-          apk = Path("release-files/ShoppingList.apk")
+          apk = Path("release-files/Shopping-Lists.apk")
           digest = hashlib.sha256(apk.read_bytes()).hexdigest()
           data = {
               "versionCode": int(os.environ["VERSION_CODE"]),
               "versionName": os.environ["VERSION_NAME"],
-              "apkUrl": f"https://github.com/{os.environ['REPOSITORY']}/releases/download/v{os.environ['VERSION_NAME']}/ShoppingList.apk",
+              "apkUrl": f"https://github.com/{os.environ['REPOSITORY']}/releases/download/v{os.environ['VERSION_NAME']}/Shopping-Lists.apk",
               "sha256": digest,
               "changelog": os.environ["CHANGELOG"],
           }
