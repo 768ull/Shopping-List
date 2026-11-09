@@ -1,0 +1,890 @@
+package br.com.shoppinglist.app;
+
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
+import android.os.Bundle;
+import android.provider.DocumentsContract;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.GridLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.Space;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.Toast;
+
+import android.graphics.pdf.PdfDocument;
+
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+public class MainActivity extends android.app.Activity {
+    private static final int REQUEST_PDF = 4101;
+    private static final int REQUEST_IMAGE_FOLDER = 4102;
+    private static final int REQUEST_UNKNOWN_SOURCES = 4103;
+    private java.io.File pendingUpdateApk;
+
+    private static final int BG_YELLOW = Color.rgb(255, 239, 174);
+    private static final int BG_YELLOW_LIGHT = Color.rgb(255, 247, 214);
+    private static final int SUNFLOWER = Color.rgb(255, 198, 36);
+    private static final int ORANGE = Color.rgb(235, 126, 35);
+    private static final int INK = Color.rgb(76, 55, 31);
+    private static final int MUTED = Color.rgb(128, 105, 72);
+    private static final int PAPER = Color.rgb(255, 254, 246);
+    private static final int GREEN = Color.rgb(71, 148, 84);
+
+    private AppDatabase database;
+    private FrameLayout root;
+    private long currentListId = -1;
+    private EditText titleEditor;
+    private NotebookPaperLayout notebook;
+    private boolean autoEmoji = true;
+    private boolean changingTitle = false;
+    private PendingExport pendingExport;
+
+    private static final class PendingExport {
+        String title;
+        List<ShoppingListRenderer.ExportPage> pages;
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        database = new AppDatabase(this);
+        SharedPreferences prefs = getSharedPreferences("shopping_list_preferences", MODE_PRIVATE);
+        autoEmoji = prefs.getBoolean("automatic_emojis", true);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        root = new FrameLayout(this);
+        setContentView(root);
+        applyImmersiveMode();
+        showHome();
+    }
+
+    private void applyImmersiveMode() {
+        View decor = getWindow().getDecorView();
+        int flags = View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+        decor.setSystemUiVisibility(flags);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) applyImmersiveMode();
+    }
+
+    private void showHome() {
+        currentListId = -1;
+        root.removeAllViews();
+        root.setBackgroundColor(BG_YELLOW);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setClipToPadding(false);
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(18), dp(20), dp(18), dp(34));
+        scroll.addView(content, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        root.addView(scroll, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        LinearLayout hero = new LinearLayout(this);
+        hero.setOrientation(LinearLayout.HORIZONTAL);
+        hero.setGravity(Gravity.CENTER_VERTICAL);
+        hero.setPadding(dp(2), dp(2), dp(2), dp(14));
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(br.com.shoppinglist.app.R.mipmap.ic_launcher);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        hero.addView(icon, new LinearLayout.LayoutParams(dp(76), dp(76)));
+
+        LinearLayout heading = new LinearLayout(this);
+        heading.setOrientation(LinearLayout.VERTICAL);
+        heading.setPadding(dp(12), 0, 0, 0);
+        TextView name = label("Shopping List", 27, INK, true);
+        heading.addView(name);
+        TextView tagline = label("Seu caderno de compras", 14, MUTED, false);
+        heading.addView(tagline);
+        TextView offline = label("●  FUNCIONA OFFLINE", 10, GREEN, true);
+        offline.setPadding(0, dp(6), 0, 0);
+        heading.addView(offline);
+        hero.addView(heading, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        content.addView(hero);
+
+        TextView intro = label("Tudo o que você precisa, em um só lugar.", 15, INK, false);
+        intro.setPadding(dp(4), 0, 0, dp(12));
+        content.addView(intro);
+
+        TextView checkUpdates = action("↻   VERIFICAR ATUALIZAÇÕES", INK, BG_YELLOW_LIGHT, 12, true);
+        checkUpdates.setGravity(Gravity.CENTER);
+        checkUpdates.setPadding(dp(12), dp(12), dp(12), dp(12));
+        checkUpdates.setBackground(roundDrawable(BG_YELLOW_LIGHT, dp(14), Color.rgb(240, 213, 145), dp(1)));
+        LinearLayout.LayoutParams updateParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        updateParams.bottomMargin = dp(12);
+        content.addView(checkUpdates, updateParams);
+        checkUpdates.setOnClickListener(v -> checkForUpdates());
+
+        TextView create = action("＋   CRIAR LISTA NOVA", Color.WHITE, ORANGE, 18, true);
+        create.setGravity(Gravity.CENTER);
+        create.setPadding(dp(16), dp(19), dp(16), dp(19));
+        create.setBackground(roundDrawable(ORANGE, dp(22), 0, 0));
+        create.setElevation(dp(4));
+        create.setOnClickListener(v -> {
+            long id = database.createList("Minha lista");
+            showEditor(id, true);
+        });
+        LinearLayout.LayoutParams createParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        createParams.bottomMargin = dp(24);
+        content.addView(create, createParams);
+
+        LinearLayout section = new LinearLayout(this);
+        section.setGravity(Gravity.CENTER_VERTICAL);
+        section.setOrientation(LinearLayout.HORIZONTAL);
+        TextView saved = label("Minhas listas", 20, INK, true);
+        section.addView(saved);
+        View flex = new View(this);
+        section.addView(flex, new LinearLayout.LayoutParams(0, 1, 1));
+        TextView count = label("SALVAS NO APARELHO", 10, MUTED, true);
+        section.addView(count);
+        content.addView(section);
+
+        List<AppDatabase.ShoppingList> lists = database.getLists();
+        if (lists.isEmpty()) {
+            LinearLayout empty = new LinearLayout(this);
+            empty.setOrientation(LinearLayout.VERTICAL);
+            empty.setGravity(Gravity.CENTER);
+            empty.setPadding(dp(22), dp(32), dp(22), dp(32));
+            empty.setBackground(roundDrawable(PAPER, dp(22), Color.rgb(237, 213, 151), dp(1)));
+            TextView emptyEmoji = label("🛒", 38, INK, false);
+            empty.addView(emptyEmoji);
+            TextView emptyText = label("Ainda não há listas por aqui.", 15, INK, true);
+            emptyText.setPadding(0, dp(10), 0, dp(4));
+            empty.addView(emptyText);
+            TextView emptySub = label("Toque em “Criar lista nova” para começar.", 13, MUTED, false);
+            empty.addView(emptySub);
+            LinearLayout.LayoutParams emptyParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            emptyParams.topMargin = dp(16);
+            content.addView(empty, emptyParams);
+        } else {
+            for (AppDatabase.ShoppingList list : lists) {
+                content.addView(makeListCard(list));
+            }
+        }
+
+        TextView footer = label("As listas ficam guardadas somente neste aparelho.", 11, MUTED, false);
+        footer.setGravity(Gravity.CENTER);
+        footer.setPadding(0, dp(22), 0, 0);
+        content.addView(footer);
+    }
+
+    private View makeListCard(AppDatabase.ShoppingList list) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(14), dp(12), dp(12), dp(12));
+        card.setBackground(roundDrawable(PAPER, dp(18), Color.rgb(237, 213, 151), dp(1)));
+        card.setElevation(dp(2));
+
+        TextView sticker = label("📝", 28, INK, false);
+        card.addView(sticker, new LinearLayout.LayoutParams(dp(48), dp(48)));
+
+        LinearLayout details = new LinearLayout(this);
+        details.setOrientation(LinearLayout.VERTICAL);
+        TextView title = label(displayTitle(list.title), 17, INK, true);
+        details.addView(title);
+        String detail = list.itemCount + (list.itemCount == 1 ? " produto" : " produtos")
+                + "  •  " + shortDate(list.updatedAt);
+        TextView subtitle = label(detail, 12, MUTED, false);
+        subtitle.setPadding(0, dp(3), 0, 0);
+        details.addView(subtitle);
+        card.addView(details, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        TextView pin = label(list.pinned ? "📌" : "›", list.pinned ? 21 : 30,
+                list.pinned ? ORANGE : MUTED, true);
+        pin.setGravity(Gravity.CENTER);
+        card.addView(pin, new LinearLayout.LayoutParams(dp(38), dp(44)));
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dp(10);
+        card.setLayoutParams(params);
+        card.setOnClickListener(v -> showEditor(list.id, false));
+        return card;
+    }
+
+    private void showEditor(long listId, boolean focusFirstItem) {
+        AppDatabase.ShoppingList current = database.getList(listId);
+        if (current == null) {
+            showHome();
+            return;
+        }
+        currentListId = listId;
+        root.removeAllViews();
+        root.setBackgroundColor(BG_YELLOW);
+
+        LinearLayout screen = new LinearLayout(this);
+        screen.setOrientation(LinearLayout.VERTICAL);
+        screen.setPadding(dp(12), dp(10), dp(12), dp(12));
+        root.addView(screen, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        TextView back = action("‹  VOLTAR", INK, BG_YELLOW_LIGHT, 13, true);
+        back.setPadding(dp(12), dp(11), dp(12), dp(11));
+        back.setBackground(roundDrawable(BG_YELLOW_LIGHT, dp(15), Color.rgb(240, 213, 145), dp(1)));
+        back.setOnClickListener(v -> {
+            hideKeyboard();
+            showHome();
+        });
+        top.addView(back);
+
+        TextView appName = label("Shopping List", 17, INK, true);
+        appName.setGravity(Gravity.CENTER);
+        top.addView(appName, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        TextView pin = action(current.pinned ? "📌 FIXADA" : "☆ FIXAR", INK,
+                current.pinned ? Color.rgb(255, 218, 127) : BG_YELLOW_LIGHT, 12, true);
+        pin.setPadding(dp(11), dp(11), dp(11), dp(11));
+        pin.setBackground(roundDrawable(current.pinned ? Color.rgb(255, 218, 127) : BG_YELLOW_LIGHT,
+                dp(15), Color.rgb(240, 213, 145), dp(1)));
+        pin.setOnClickListener(v -> {
+            AppDatabase.ShoppingList fresh = database.getList(currentListId);
+            if (fresh != null) {
+                database.setPinned(currentListId, !fresh.pinned);
+                showEditor(currentListId, false);
+            }
+        });
+        top.addView(pin);
+        screen.addView(top);
+
+        LinearLayout tools = new LinearLayout(this);
+        tools.setOrientation(LinearLayout.HORIZONTAL);
+        tools.setGravity(Gravity.CENTER_VERTICAL);
+        tools.setPadding(0, dp(10), 0, dp(10));
+        TextView save = action("✓ SALVO", GREEN, Color.rgb(230, 247, 226), 12, true);
+        save.setGravity(Gravity.CENTER);
+        save.setPadding(dp(8), dp(10), dp(8), dp(10));
+        save.setBackground(roundDrawable(Color.rgb(230, 247, 226), dp(13), 0, 0));
+        save.setOnClickListener(v -> Toast.makeText(this, "Sua lista já está salva no aplicativo.", Toast.LENGTH_SHORT).show());
+        tools.addView(save, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        TextView export = action("⇩  EXPORTAR", Color.WHITE, ORANGE, 12, true);
+        export.setGravity(Gravity.CENTER);
+        export.setPadding(dp(8), dp(10), dp(8), dp(10));
+        export.setBackground(roundDrawable(ORANGE, dp(13), 0, 0));
+        export.setOnClickListener(v -> showExportDialog());
+        LinearLayout.LayoutParams exportParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.25f);
+        exportParams.leftMargin = dp(7);
+        tools.addView(export, exportParams);
+
+        TextView delete = action("🗑  EXCLUIR", Color.rgb(151, 70, 50), Color.rgb(255, 231, 219), 12, true);
+        delete.setGravity(Gravity.CENTER);
+        delete.setPadding(dp(8), dp(10), dp(8), dp(10));
+        delete.setBackground(roundDrawable(Color.rgb(255, 231, 219), dp(13), 0, 0));
+        delete.setOnClickListener(v -> confirmDeleteList());
+        LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        deleteParams.leftMargin = dp(7);
+        tools.addView(delete, deleteParams);
+        screen.addView(tools);
+
+        LinearLayout emojiControls = new LinearLayout(this);
+        emojiControls.setOrientation(LinearLayout.HORIZONTAL);
+        emojiControls.setGravity(Gravity.CENTER_VERTICAL);
+        emojiControls.setPadding(dp(3), 0, dp(3), dp(8));
+        Switch autoSwitch = new Switch(this);
+        autoSwitch.setText("Emojis automáticos");
+        autoSwitch.setTextColor(INK);
+        autoSwitch.setTextSize(13);
+        autoSwitch.setChecked(autoEmoji);
+        autoSwitch.setOnCheckedChangeListener((buttonView, checked) -> {
+            autoEmoji = checked;
+            getSharedPreferences("shopping_list_preferences", MODE_PRIVATE)
+                    .edit().putBoolean("automatic_emojis", checked).apply();
+            if (checked) {
+                for (AppDatabase.ShoppingItem item : database.getItems(currentListId)) {
+                    if (!item.emojiManual) {
+                        String guess = EmojiCatalog.automatic(item.text);
+                        database.setItemEmoji(item.id, guess, false);
+                    }
+                }
+                showEditor(currentListId, false);
+            }
+        });
+        emojiControls.addView(autoSwitch);
+        View switchSpacer = new View(this);
+        emojiControls.addView(switchSpacer, new LinearLayout.LayoutParams(0, 1, 1));
+        TextView help = label("Toque no emoji para trocar", 11, MUTED, false);
+        emojiControls.addView(help);
+        screen.addView(emojiControls);
+
+        ScrollView paperScroll = new ScrollView(this);
+        paperScroll.setFillViewport(true);
+        paperScroll.setClipToPadding(false);
+        paperScroll.setBackground(roundDrawable(PAPER, dp(20), Color.rgb(237, 213, 151), dp(1)));
+        notebook = new NotebookPaperLayout(this);
+        paperScroll.addView(notebook, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        screen.addView(paperScroll, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+
+        titleEditor = new EditText(this);
+        titleEditor.setText(displayTitle(current.title));
+        titleEditor.setSingleLine(true);
+        titleEditor.setTextSize(23);
+        titleEditor.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        titleEditor.setTextColor(INK);
+        titleEditor.setHintTextColor(Color.rgb(175, 154, 117));
+        titleEditor.setHint("Nome da lista");
+        titleEditor.setPadding(0, dp(4), 0, dp(8));
+        titleEditor.setBackgroundColor(Color.TRANSPARENT);
+        notebook.addView(titleEditor, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView subheading = label("MINHAS COMPRAS", 10, MUTED, true);
+        subheading.setLetterSpacing(0.12f);
+        subheading.setPadding(0, 0, 0, dp(14));
+        notebook.addView(subheading);
+
+        titleEditor.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!changingTitle && currentListId != -1) database.updateTitle(currentListId, s.toString());
+            }
+            @Override public void afterTextChanged(Editable s) { }
+        });
+
+        List<AppDatabase.ShoppingItem> items = database.getItems(listId);
+        EditText[] firstEditor = new EditText[1];
+        for (AppDatabase.ShoppingItem item : items) {
+            View row = makeItemRow(item, firstEditor);
+            notebook.addView(row, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
+
+        TextView addItem = action("＋  ADICIONAR PRODUTO", ORANGE, Color.rgb(255, 239, 205), 14, true);
+        addItem.setGravity(Gravity.CENTER);
+        addItem.setPadding(dp(14), dp(15), dp(14), dp(15));
+        addItem.setBackground(roundDrawable(Color.rgb(255, 239, 205), dp(15), Color.rgb(246, 207, 142), dp(1)));
+        LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        addParams.topMargin = dp(14);
+        notebook.addView(addItem, addParams);
+        addItem.setOnClickListener(v -> {
+            int position = database.getItems(currentListId).size();
+            database.addItem(currentListId, "", "🛒", false, position);
+            showEditor(currentListId, true);
+        });
+
+        TextView note = label("Dica: cada produto pode ter seu próprio adesivo de emoji.", 11, MUTED, false);
+        note.setGravity(Gravity.CENTER);
+        note.setPadding(0, dp(12), 0, dp(4));
+        notebook.addView(note);
+
+        if (focusFirstItem && firstEditor[0] != null) {
+            firstEditor[0].requestFocus();
+            firstEditor[0].postDelayed(() -> {
+                InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                if (imm != null) imm.showSoftInput(firstEditor[0], InputMethodManager.SHOW_IMPLICIT);
+            }, 220);
+        }
+    }
+
+    private View makeItemRow(AppDatabase.ShoppingItem item, EditText[] firstEditor) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.TOP | Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(3), 0, dp(3));
+
+        CheckBox check = new CheckBox(this);
+        check.setButtonTintList(new ColorStateList(
+                new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+                new int[]{GREEN, Color.rgb(149, 137, 112)}));
+        check.setChecked(item.checked);
+        check.setPadding(0, 0, 0, 0);
+        row.addView(check, new LinearLayout.LayoutParams(dp(34), dp(48)));
+        check.setOnCheckedChangeListener((buttonView, checked) -> database.setItemChecked(item.id, checked));
+
+        TextView sticker = label(item.emoji == null ? "🛒" : item.emoji, 25, INK, false);
+        sticker.setGravity(Gravity.CENTER);
+        sticker.setBackground(roundDrawable(Color.rgb(255, 246, 219), dp(12), Color.rgb(242, 220, 174), dp(1)));
+        row.addView(sticker, new LinearLayout.LayoutParams(dp(43), dp(43)));
+        sticker.setOnClickListener(v -> showEmojiPicker(item, sticker));
+
+        EditText input = new EditText(this);
+        input.setText(item.text == null ? "" : item.text);
+        input.setTextSize(17);
+        input.setTextColor(item.checked ? MUTED : INK);
+        input.setHintTextColor(Color.rgb(175, 154, 117));
+        input.setHint("Escreva um produto...");
+        input.setBackgroundColor(Color.TRANSPARENT);
+        input.setPadding(dp(7), dp(6), dp(2), dp(6));
+        input.setGravity(Gravity.TOP | Gravity.START);
+        input.setMinLines(1);
+        input.setMaxLines(8);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        row.addView(input, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        if (firstEditor[0] == null && (item.text == null || item.text.isEmpty())) firstEditor[0] = input;
+
+        input.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String value = s.toString();
+                database.setItemText(item.id, value);
+                if (autoEmoji && !item.emojiManual) {
+                    String detected = EmojiCatalog.automatic(value);
+                    if (!detected.equals(item.emoji)) {
+                        item.emoji = detected;
+                        database.setItemEmoji(item.id, detected, false);
+                        sticker.setText(detected);
+                    }
+                }
+            }
+            @Override public void afterTextChanged(Editable s) { }
+        });
+
+        TextView remove = label("×", 23, Color.rgb(178, 104, 77), true);
+        remove.setGravity(Gravity.CENTER);
+        row.addView(remove, new LinearLayout.LayoutParams(dp(30), dp(43)));
+        remove.setOnClickListener(v -> new AlertDialog.Builder(this)
+                .setTitle("Remover produto?")
+                .setMessage("Este item será retirado da lista.")
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Remover", (dialog, which) -> {
+                    database.deleteItem(item.id);
+                    database.reorderItems(currentListId);
+                    hideKeyboard();
+                    showEditor(currentListId, false);
+                }).show());
+        return row;
+    }
+
+    private void showEmojiPicker(AppDatabase.ShoppingItem item, TextView sticker) {
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        LinearLayout outer = new LinearLayout(this);
+        outer.setOrientation(LinearLayout.VERTICAL);
+        outer.setPadding(dp(16), dp(14), dp(16), dp(16));
+        outer.setBackground(roundDrawable(PAPER, dp(20), Color.rgb(234, 210, 159), dp(1)));
+        TextView heading = label("Escolha o adesivo", 18, INK, true);
+        heading.setPadding(0, 0, 0, dp(10));
+        outer.addView(heading);
+        ScrollView scroll = new ScrollView(this);
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(5);
+        for (String emoji : EmojiCatalog.PALETTE) {
+            TextView choice = label(emoji, 27, INK, false);
+            choice.setGravity(Gravity.CENTER);
+            choice.setPadding(dp(4), dp(8), dp(4), dp(8));
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+            params.width = dp(48);
+            params.height = dp(50);
+            grid.addView(choice, params);
+            choice.setOnClickListener(v -> {
+                item.emoji = emoji;
+                item.emojiManual = true;
+                database.setItemEmoji(item.id, emoji, true);
+                sticker.setText(emoji);
+                dialog.dismiss();
+            });
+        }
+        scroll.addView(grid);
+        outer.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(280)));
+        TextView backToAuto = action("Usar emoji automático", ORANGE, Color.rgb(255, 239, 205), 13, true);
+        backToAuto.setGravity(Gravity.CENTER);
+        backToAuto.setPadding(dp(10), dp(12), dp(10), dp(12));
+        backToAuto.setBackground(roundDrawable(Color.rgb(255, 239, 205), dp(14), 0, 0));
+        LinearLayout.LayoutParams autoParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        autoParams.topMargin = dp(10);
+        outer.addView(backToAuto, autoParams);
+        backToAuto.setOnClickListener(v -> {
+            item.emojiManual = false;
+            item.emoji = EmojiCatalog.automatic(item.text);
+            database.setItemEmoji(item.id, item.emoji, false);
+            sticker.setText(item.emoji);
+            dialog.dismiss();
+        });
+        dialog.setContentView(outer);
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawableResource(android.R.color.transparent);
+            window.setLayout(Math.min(getResources().getDisplayMetrics().widthPixels - dp(40), dp(360)),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+        dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(Math.min(getResources().getDisplayMetrics().widthPixels - dp(40), dp(360)),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
+    private void showExportDialog() {
+        hideKeyboard();
+        pendingExport = prepareCurrentExport();
+        String[] choices = {
+                "Salvar no aplicativo",
+                "Salvar como PDF (ideal para listas grandes)",
+                "Salvar como imagem (uma imagem por página)"
+        };
+        String recommendation = pendingExport.pages.size() == 1
+                ? "Sua lista cabe em uma folha. Recomendamos salvar como imagem."
+                : "Sua lista ocupa " + pendingExport.pages.size() + " páginas. Recomendamos salvar como PDF.";
+        new AlertDialog.Builder(this)
+                .setTitle("Salvar sua lista")
+                .setMessage("A lista já é salva automaticamente no aparelho. " + recommendation + " Você também pode baixar cada página como uma imagem separada.")
+                .setItems(choices, (dialog, which) -> {
+                    if (which == 0) {
+                        Toast.makeText(this, "Lista salva no aplicativo.", Toast.LENGTH_SHORT).show();
+                    } else if (which == 1) {
+                        choosePdfLocation();
+                    } else {
+                        chooseImageFolder();
+                    }
+                }).show();
+    }
+
+    private PendingExport prepareCurrentExport() {
+        PendingExport export = new PendingExport();
+        AppDatabase.ShoppingList list = database.getList(currentListId);
+        export.title = list == null ? "Minha lista" : displayTitle(list.title);
+        export.pages = ShoppingListRenderer.paginate(export.title, database.getItems(currentListId));
+        return export;
+    }
+
+    private void choosePdfLocation() {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/pdf");
+        intent.putExtra(Intent.EXTRA_TITLE, safeFileName(pendingExport.title) + ".pdf");
+        startActivityForResult(intent, REQUEST_PDF);
+    }
+
+    private void chooseImageFolder() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        startActivityForResult(intent, REQUEST_IMAGE_FOLDER);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_UNKNOWN_SOURCES) {
+            if (pendingUpdateApk != null && android.os.Build.VERSION.SDK_INT >= 26
+                    && getPackageManager().canRequestPackageInstalls()) {
+                try {
+                    UpdateManager.install(this, pendingUpdateApk, REQUEST_UNKNOWN_SOURCES);
+                } catch (Exception e) {
+                    Toast.makeText(this, "Não foi possível iniciar a instalação: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            } else {
+                Toast.makeText(this, "A autorização para instalar atualizações não foi concedida.", Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+        if (resultCode != RESULT_OK || data == null || data.getData() == null || pendingExport == null) return;
+        Uri uri = data.getData();
+        if (requestCode == REQUEST_PDF) {
+            writePdf(uri, pendingExport);
+        } else if (requestCode == REQUEST_IMAGE_FOLDER) {
+            try {
+                getContentResolver().takePersistableUriPermission(uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } catch (Exception ignored) { }
+            writeImages(uri, pendingExport);
+        }
+    }
+
+    private void checkForUpdates() {
+        if (!isNetworkAvailable()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Sem conexão com a internet")
+                    .setMessage("O Shopping List funciona normalmente offline. Para verificar atualizações, conecte-se à internet e tente novamente.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+        AlertDialog progress = new AlertDialog.Builder(this)
+                .setTitle("Verificando atualizações")
+                .setMessage("Consultando a versão mais recente...")
+                .setCancelable(false)
+                .create();
+        progress.show();
+        UpdateManager.check(this, (update, message) -> {
+            progress.dismiss();
+            if (isFinishing()) return;
+            if (update == null) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Shopping List")
+                        .setMessage(message == null ? "Não foi possível verificar atualizações." : message)
+                        .setPositiveButton("OK", null)
+                        .show();
+                return;
+            }
+            String detail = "Nova versão disponível: " + update.versionName + " (" + update.versionCode + ").";
+            if (!update.changelog.trim().isEmpty()) detail += "\n\nNovidades:\n" + update.changelog;
+            detail += "\n\nSuas listas serão mantidas durante a atualização.";
+            new AlertDialog.Builder(this)
+                    .setTitle("Atualização disponível")
+                    .setMessage(detail)
+                    .setNegativeButton("Depois", null)
+                    .setPositiveButton("Baixar e instalar", (dialog, which) -> downloadUpdate(update))
+                    .show();
+        });
+    }
+
+    private void downloadUpdate(UpdateManager.UpdateInfo update) {
+        AlertDialog progress = new AlertDialog.Builder(this)
+                .setTitle("Baixando atualização")
+                .setMessage("O aplicativo está baixando e verificando o arquivo...")
+                .setCancelable(false)
+                .create();
+        progress.show();
+        UpdateManager.download(this, update, (apk, error) -> {
+            progress.dismiss();
+            if (isFinishing()) return;
+            if (apk == null) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Falha na atualização")
+                        .setMessage(error == null ? "Não foi possível baixar o APK." : error)
+                        .setPositiveButton("OK", null)
+                        .show();
+                return;
+            }
+            pendingUpdateApk = apk;
+            try {
+                UpdateManager.install(this, apk, REQUEST_UNKNOWN_SOURCES);
+            } catch (Exception e) {
+                Toast.makeText(this, "Não foi possível abrir o instalador: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private boolean isNetworkAvailable() {
+        try {
+            android.net.ConnectivityManager manager =
+                    (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (manager == null) return false;
+            android.net.NetworkInfo info = manager.getActiveNetworkInfo();
+            return info != null && info.isConnected();
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private void writePdf(Uri destination, PendingExport export) {
+        new Thread(() -> {
+            String error = null;
+            PdfDocument document = new PdfDocument();
+            try {
+                for (int i = 0; i < export.pages.size(); i++) {
+                    PdfDocument.PageInfo info = new PdfDocument.PageInfo.Builder(
+                            ShoppingListRenderer.PAGE_WIDTH, ShoppingListRenderer.PAGE_HEIGHT, i + 1).create();
+                    PdfDocument.Page page = document.startPage(info);
+                    ShoppingListRenderer.drawPage(page.getCanvas(), export.title, export.pages.get(i),
+                            i + 1, export.pages.size());
+                    document.finishPage(page);
+                }
+                try (OutputStream output = getContentResolver().openOutputStream(destination, "w")) {
+                    if (output == null) throw new IllegalStateException("Não foi possível abrir o arquivo escolhido.");
+                    document.writeTo(output);
+                    output.flush();
+                }
+            } catch (Exception e) {
+                error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            } finally {
+                document.close();
+            }
+            final String finalError = error;
+            runOnUiThread(() -> {
+                if (finalError == null) Toast.makeText(this, "PDF salvo com " + export.pages.size() + " página(s).", Toast.LENGTH_LONG).show();
+                else Toast.makeText(this, "Falha ao salvar PDF: " + finalError, Toast.LENGTH_LONG).show();
+            });
+        }, "shopping-list-pdf-export").start();
+    }
+
+    private void writeImages(Uri treeUri, PendingExport export) {
+        new Thread(() -> {
+            String error = null;
+            int saved = 0;
+            try {
+                String treeId = DocumentsContract.getTreeDocumentId(treeUri);
+                Uri parent = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeId);
+                ContentResolver resolver = getContentResolver();
+                String base = safeFileName(export.title);
+                for (int i = 0; i < export.pages.size(); i++) {
+                    String filename = base + "_pagina_" + String.format(Locale.ROOT, "%02d", i + 1) + ".png";
+                    Uri file = DocumentsContract.createDocument(resolver, parent, "image/png", filename);
+                    if (file == null) throw new IllegalStateException("Não foi possível criar " + filename);
+                    android.graphics.Bitmap bitmap = ShoppingListRenderer.renderImage(export.title,
+                            export.pages.get(i), i + 1, export.pages.size());
+                    try (OutputStream output = resolver.openOutputStream(file, "w")) {
+                        if (output == null) throw new IllegalStateException("Não foi possível gravar " + filename);
+                        if (!bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output)) {
+                            throw new IllegalStateException("Falha ao converter a imagem.");
+                        }
+                        output.flush();
+                    } finally {
+                        bitmap.recycle();
+                    }
+                    saved++;
+                }
+            } catch (Exception e) {
+                error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            }
+            final String finalError = error;
+            final int finalSaved = saved;
+            runOnUiThread(() -> {
+                if (finalError == null) Toast.makeText(this, finalSaved + " imagem(ns) salvas na pasta escolhida.", Toast.LENGTH_LONG).show();
+                else Toast.makeText(this, finalSaved + " imagem(ns) salvas. Falha: " + finalError, Toast.LENGTH_LONG).show();
+            });
+        }, "shopping-list-image-export").start();
+    }
+
+    private void confirmDeleteList() {
+        new AlertDialog.Builder(this)
+                .setTitle("Excluir esta lista?")
+                .setMessage("A lista e todos os produtos dela serão apagados deste aparelho.")
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Excluir", (dialog, which) -> {
+                    long id = currentListId;
+                    currentListId = -1;
+                    database.deleteList(id);
+                    hideKeyboard();
+                    showHome();
+                }).show();
+    }
+
+    private void hideKeyboard() {
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null && getCurrentFocus() != null) imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        } catch (Exception ignored) { }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (currentListId != -1) {
+            hideKeyboard();
+            showHome();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    private TextView label(String text, float size, int color, boolean bold) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextSize(size);
+        view.setTextColor(color);
+        if (bold) view.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
+        else view.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+        view.setIncludeFontPadding(true);
+        return view;
+    }
+
+    private TextView action(String text, int textColor, int backgroundColor, float size, boolean bold) {
+        TextView view = label(text, size, textColor, bold);
+        view.setBackground(roundDrawable(backgroundColor, dp(14), 0, 0));
+        view.setClickable(true);
+        view.setFocusable(true);
+        return view;
+    }
+
+    private GradientDrawable roundDrawable(int color, int radius, int strokeColor, int strokeWidth) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(radius);
+        if (strokeWidth > 0) drawable.setStroke(strokeWidth, strokeColor);
+        return drawable;
+    }
+
+    private int dp(float value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private String displayTitle(String title) {
+        return title == null || title.trim().isEmpty() ? "Minha lista" : title;
+    }
+
+    private String shortDate(long time) {
+        if (time <= 0) return "agora";
+        return new SimpleDateFormat("dd/MM", new Locale("pt", "BR")).format(new Date(time));
+    }
+
+    private String safeFileName(String value) {
+        String safe = value == null ? "Minha_lista" : value.trim();
+        safe = safe.replaceAll("[^\\p{L}\\p{N}_-]+", "_");
+        safe = safe.replaceAll("_+", "_");
+        if (safe.isEmpty()) safe = "Minha_lista";
+        return safe;
+    }
+
+    private final class NotebookPaperLayout extends LinearLayout {
+        private final Paint blueLines = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint redMargin = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        NotebookPaperLayout(Context context) {
+            super(context);
+            setOrientation(LinearLayout.VERTICAL);
+            setWillNotDraw(false);
+            setPadding(dp(54), dp(20), dp(16), dp(30));
+            blueLines.setColor(Color.rgb(202, 222, 244));
+            blueLines.setStrokeWidth(dp(1));
+            redMargin.setColor(Color.rgb(237, 164, 156));
+            redMargin.setStrokeWidth(dp(1));
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            canvas.drawColor(PAPER);
+            float spacing = dp(52);
+            float start = dp(94);
+            for (float y = start; y < getHeight(); y += spacing) {
+                canvas.drawLine(dp(12), y, getWidth() - dp(8), y, blueLines);
+            }
+            canvas.drawLine(dp(42), 0, dp(42), getHeight(), redMargin);
+        }
+    }
+}
