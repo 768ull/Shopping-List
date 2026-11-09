@@ -68,9 +68,22 @@ jobs:
           gradle --no-daemon --stacktrace -p android :app:assembleDebug
           APK="android/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+
           mkdir -p verification-output
           cp "$APK" verification-output/ShoppingList-debug.apk
+          unzip -tq verification-output/ShoppingList-debug.apk
+
+          BADGING="$("$AAPT" dump badging verification-output/ShoppingList-debug.apk)"
+          printf '%s\\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist.debug' versionCode='5' versionName='1.0.4-debug'"
+          printf '%s\\n' "$BADGING" | grep -F "sdkVersion:'30'"
+          printf '%s\\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
+
+          "$APKSIGNER" verify --verbose --print-certs verification-output/ShoppingList-debug.apk 2>&1 | tee verification-output/signature-report.txt
+          grep -Eiq "Verified using v2 scheme.*: true" verification-output/signature-report.txt
           sha256sum verification-output/ShoppingList-debug.apk > verification-output/sha256.txt
 
       - name: Upload verified Debug test APK (not for release updates)
