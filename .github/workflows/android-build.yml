@@ -6,11 +6,11 @@ on:
       version_code:
         description: "Número de versão inteiro e maior que o publicado"
         required: true
-        default: "5"
+        default: "7"
       version_name:
         description: "Nome da versão (ex.: 1.0)"
         required: true
-        default: "1.0.4"
+        default: "1.0.6"
       changelog:
         description: "Notas da versão"
         required: true
@@ -138,11 +138,18 @@ jobs:
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
           current_code = int(manifest.get("versionCode", 0))
           has_published_apk = bool(str(manifest.get("apkUrl", "")).strip())
-          if has_published_apk and int(code_text) <= current_code:
-              raise SystemExit(f"version_code precisa ser maior que a versão publicada ({current_code}).")
-
           build_file = pathlib.Path(os.environ["APP_BUILD_FILE"])
           source = build_file.read_text(encoding="utf-8")
+          current_match = re.search(r"(\bversionCode\s*(?:=\s*)?)(\d+)", source)
+          if current_match is None:
+              raise SystemExit("Não encontrei versionCode no app/build.gradle.")
+          source_code = int(current_match.group(2))
+          requested_code = int(code_text)
+          if requested_code < source_code:
+              raise SystemExit(f"version_code não pode ser menor que a versão-base do projeto ({source_code}).")
+          if has_published_apk and requested_code <= current_code:
+              raise SystemExit(f"version_code precisa ser maior que a versão publicada ({current_code}).")
+
           source, code_count = re.subn(
               r"(\bversionCode\s*(?:=\s*)?)\d+",
               lambda m: m.group(1) + code_text,
@@ -221,9 +228,23 @@ jobs:
           mkdir -p release-files
           cp "$APK" release-files/ShoppingList.apk
           unzip -tq release-files/ShoppingList.apk
+          python3 - <<'PY'
+          from zipfile import ZipFile, ZIP_STORED
+          apk = "release-files/ShoppingList.apk"
+          with ZipFile(apk) as archive:
+              broken = archive.testzip()
+              if broken:
+                  raise SystemExit(f"APK corrompido: {broken}")
+              native = [item for item in archive.infolist() if item.filename.startswith("lib/") and item.filename.endswith(".so")]
+              if not native:
+                  raise SystemExit("APK não contém bibliotecas nativas.")
+              stored = [item.filename for item in native if item.compress_type == ZIP_STORED]
+              if stored:
+                  raise SystemExit("Bibliotecas nativas continuam sem compressão: " + ", ".join(stored[:5]))
           BADGING="$("$AAPT" dump badging release-files/ShoppingList.apk)"
           printf '%s\n' "$BADGING" | grep -F "package: name='br.com.shoppinglist' versionCode='${VERSION_CODE}' versionName='${VERSION_NAME}'"
           printf '%s\n' "$BADGING" | grep -F "sdkVersion:'30'"
+          printf '%s\n' "$BADGING" | grep -F "native-code: 'arm64-v8a'"
           if [[ ! -s "$APK.idsig" ]]; then
             echo "::error::A assinatura V4 não foi gerada. Verifique a configuração Android Gradle do módulo."
             exit 1
@@ -299,11 +320,13 @@ jobs:
               "sha256": digest,
               "changelog": os.environ["CHANGELOG"],
           }
-          Path("update.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          serialized = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+          Path("update.json").write_text(serialized, encoding="utf-8")
+          Path("android/update.json").write_text(serialized, encoding="utf-8")
           PY
 
       - name: Salvar manifesto na branch main
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Atualiza manifesto do Shopping Lists v${{ inputs.version_name }}"
-          file_pattern: update.json
+          file_pattern: update.json android/update.json
