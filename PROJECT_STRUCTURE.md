@@ -35,11 +35,14 @@ Os principais arquivos Java são:
 - `ShoppingListRenderer.java`: paginação e renderização para PDF/PNG.
 - `EmojiCatalog.java`: catálogo local de emojis.
 - `StickerCatalog.java`: adesivos gráficos locais para produtos sem emoji.
+- `ProductAiEngine.kt`: reconhecimento semântico e geração local de imagens/stickers.
+- `assets/emoji/`: inventário Unicode, nomes em português e licença.
+- `StickerCatalog.java`: adesivos gráficos locais para produtos sem emoji.
 - `assets/emoji/`: inventário Unicode Emoji 18.0, nomes em português e licença.
 - `UpdateConfig.java` e `UpdateManager.java`: consulta e instalação assistida de atualizações.
 - `ApkFileProvider.java`: entrega segura do APK ao instalador Android.
 
-A cópia ZIP antiga não faz parte da branch `main` atual. `android/` é a fonte principal do projeto.
+O ZIP é uma cópia auxiliar do projeto; `android/` é a fonte principal mantida. A cópia foi limpa e não deve conter arquivos de assinatura.
 
 ## Fluxo de compilação
 
