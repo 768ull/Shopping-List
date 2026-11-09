@@ -1,12 +1,24 @@
 # Estrutura do repositório
 
-## Arquivos visíveis
+## Árvore atual
 
 ```text
 Shopping-List/
 ├── .github/
 │   └── workflows/
-│       └── android-build.yml
+│       ├── android-build.yml
+│       └── android-verify.yml
+├── android/
+│   ├── app/
+│   │   ├── build.gradle
+│   │   └── src/main/
+│   │       ├── AndroidManifest.xml
+│   │       ├── java/br/com/shoppinglist/app/
+│   │       └── res/
+│   ├── gradle/wrapper/gradle-wrapper.properties
+│   ├── build.gradle
+│   ├── settings.gradle
+│   └── gradle.properties
 ├── CONFIGURAR_APK_E_ATUALIZACOES.md
 ├── PROJECT_STRUCTURE.md
 ├── README.md
@@ -14,28 +26,36 @@ Shopping-List/
 └── update.json
 ```
 
-## Conteúdo do ZIP
+## Código Android
 
-O código-fonte Android continua dentro de `Shopping_List_Project_com_Atualizador.zip`. A estrutura interna esperada contém um módulo Android `app` e um arquivo Gradle de configuração. O workflow não depende mais do nome fixo da pasta `ShoppingListProject`: ele procura exatamente um `app/build.gradle` e localiza a raiz pelo `settings.gradle` ou `settings.gradle.kts`.
+A fonte principal está em `android/`. O módulo `app` contém o código Java, manifesto, recursos gráficos, ícones e configuração de compilação.
+
+Os principais arquivos Java são:
+- `MainActivity.java`: telas e interações da lista.
+- `AppDatabase.java`: armazenamento local SQLite.
+- `ShoppingListRenderer.java`: paginação e renderização para PDF/PNG.
+- `EmojiCatalog.java`: catálogo local de emojis.
+- `UpdateConfig.java` e `UpdateManager.java`: consulta e instalação assistida de atualizações.
+- `ApkFileProvider.java`: entrega segura do APK ao instalador Android.
+
+O ZIP permanece como cópia do projeto original, mas foi recriado sem a pasta `signing/`, keystores ou arquivos de senha.
 
 ## Fluxo de compilação
 
-1. Checkout completo da branch.
-2. Teste de integridade e extração do ZIP.
-3. Localização do módulo `app` e da raiz Gradle.
-4. Validação do keystore privado, alias e senhas por GitHub Actions Secrets.
-5. Atualização de `versionCode` e `versionName`.
-6. Configuração das assinaturas V1, V2, V3 e V4.
-7. Instalação do JDK, Android SDK e Gradle.
-8. Compilação do APK Release.
-9. Verificação de V1/V2/V3, existência do arquivo V4 `.idsig` e cálculo SHA-256.
-10. Armazenamento do artefato e publicação do GitHub Release.
-11. Atualização de `update.json`.
+1. Checkout da branch.
+2. Localização da raiz Android em `android/` (com fallback de extração do ZIP).
+3. Preparação de keystore privada por GitHub Actions Secrets.
+4. Atualização de `versionCode` e `versionName`.
+5. Instalação de JDK, Android SDK e Gradle.
+6. Compilação do Release.
+7. Verificação V1/V2/V3, existência do arquivo V4 `.idsig` e cálculo SHA-256.
+8. Publicação de Release e artefatos.
+9. Atualização de `update.json`.
 
-## Segurança
+## Segurança da assinatura
 
-A chave de desenvolvimento incluída no ZIP está exposta porque o repositório é público. O workflow não a utiliza automaticamente: exige uma chave privada de distribuição em GitHub Actions Secrets. Antes de trocar a chave, verifique se já existem instalações usando a chave antiga, pois a identidade de assinatura precisa ser preservada para atualizações normais.
+A chave antiga do ZIP original foi exposta em commits anteriores do repositório público. O arquivo foi removido da cópia atual, mas o histórico GitHub ainda pode conter versões antigas. Para distribuição segura, use um novo keystore guardado em Actions Secrets. Verifique instalações locais anteriores antes de trocar a identidade de assinatura.
 
-## Limitação da auditoria
+## Validação pendente
 
-A integração GitHub usada nesta sessão não conseguiu fornecer os bytes do ZIP. Por isso, a árvore interna, as dependências, o código do atualizador e os recursos do aplicativo não foram inspecionados nem modificados nesta revisão. Não inventamos nomes de arquivos internos nem declaramos uma compilação como aprovada sem executá-la.
+A migração da estrutura e a limpeza do ZIP foram concluídas. O APK Release ainda precisa de uma execução real com Secrets de assinatura configurados. O workflow de verificação Debug valida o código sem exigir chave de distribuição.
