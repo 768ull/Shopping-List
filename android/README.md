@@ -1,93 +1,62 @@
 # Shopping List — projeto Android nativo
 
-Aplicativo nativo de lista de compras, com visual amarelo e página de caderno. O projeto não contém WebView, não possui permissão `INTERNET` e não usa serviços remotos.
+Aplicativo Android nativo de lista de compras, com visual amarelo e página de caderno. As listas e os produtos são armazenados localmente em SQLite. A permissão de internet é usada somente para a verificação manual de atualizações.
 
-## Recursos implementados
+## Recursos
 
 - Criar várias listas, abrir, fixar/desafixar e excluir.
-- Guardar listas e produtos em SQLite local; a gravação é feita enquanto a pessoa digita.
-- Não há `maxLength`/limite artificial de caracteres nos produtos nem limite fixo de itens ou listas. O limite real é o espaço disponível no aparelho e os limites práticos do Android/SQLite.
-- Cada produto tem um emoji adesivo; o modo automático identifica palavras comuns em português por um catálogo local. É possível escolher manualmente entre dezenas de emojis ou voltar ao automático.
-- Exportação PDF multipágina em tamanho A4 usando `android.graphics.pdf.PdfDocument`.
-- Exportação PNG em alta resolução (uma imagem por página) usando `Bitmap`; a pessoa escolhe a pasta de destino.
-- A tela usa modo imersivo para ocultar as barras de status e navegação. O Android ainda pode mostrar temporariamente as barras quando a pessoa faz o gesto do sistema ou quando o teclado aparece.
-- Ícone próprio para o aplicativo.
+- Guardar listas e produtos em SQLite local.
+- Adicionar e editar produtos e marcar itens comprados.
+- Emojis automáticos por palavras comuns em português e seleção manual.
+- Exportação PDF multipágina A4 e PNG em alta resolução.
+- Verificação manual de atualizações por HTTPS, com validação de SHA-256, versão, pacote e certificado.
+- Instalador do Android para confirmar a atualização; não há instalação silenciosa.
 
 ## SDK e compatibilidade
 
 - `compileSdk = 37` (Android 17).
 - `targetSdk = 37`.
 - `minSdk = 21` (Android 5.0).
-- Código Java + Views Android nativas; sem Jetpack Compose ou bibliotecas de exportação de terceiros.
-- Android Studio/Android Gradle Plugin compatível com API 37 (AGP 9.5.0) e JDK 17 ou superior.
+- Java + Views Android nativas, sem WebView ou Jetpack Compose.
+- Android Gradle Plugin 9.5.0, Gradle 9.6.0 e JDK 17.
+- Android SDK Platform 37.0 e Build Tools 36.0.0 no CI.
 
-O SDK 37 é usado para compilar e direcionar o aplicativo. `minSdk 21` é o que define a versão mínima instalável; isso não significa compatibilidade com versões anteriores ao Android 5.0.
+O SDK 37 é usado para compilar e direcionar o aplicativo. `minSdk 21` define a versão mínima instalável.
 
 ## Assinatura APK V1/V2/V3/V4
 
-O `signingConfigs.release` ativa `enableV1Signing`, `enableV2Signing`, `enableV3Signing` e `enableV4Signing`. A assinatura V4 também cria o arquivo separado `.apk.idsig`; ele não substitui o APK e é usado em cenários de instalação incremental.
+O `signingConfigs.release` ativa `enableV1Signing`, `enableV2Signing`, `enableV3Signing` e `enableV4Signing`. A assinatura V4 cria o arquivo separado `.idsig`.
 
-Foi criada uma chave de desenvolvimento local em `signing/shopping-list-release.jks`. As credenciais estão em `signing/signing.properties`, usadas pelo Gradle para assinar o build de release. **Não publique nem envie esses dois arquivos para um repositório público.** Faça uma cópia de segurança offline: versões futuras do aplicativo precisam ser assinadas com a mesma chave para instalar como atualização por cima da versão anterior.
+**Não existe mais um keystore dentro desta pasta.** A chave de desenvolvimento que acompanhava o ZIP original foi retirada do código atual e da cópia atual do ZIP porque o repositório é público. Ela apareceu em commits anteriores do histórico público e deve ser considerada exposta.
 
-> O arquivo `.gitignore` ignora a pasta `signing/` intencionalmente. Se você transferir o projeto para outro computador, copie a pasta `signing/` por um canal privado.
+O workflow `Build Shopping List APK` recebe a chave privada de distribuição por GitHub Actions Secrets:
+- `SHOPPING_KEYSTORE_BASE64`
+- `SHOPPING_KEYSTORE_PASSWORD`
+- `SHOPPING_KEY_ALIAS`
+- `SHOPPING_KEY_PASSWORD`
 
-## Gerar APK de release
+Para compilação local de Release, crie uma configuração privada em `signing/signing.properties` e mantenha o arquivo JKS fora do Git. Não publique credenciais. Antes de trocar uma chave usada por uma instalação já existente, confirme a identidade de assinatura: uma chave diferente não atualiza normalmente o aplicativo instalado.
 
-1. Instale Android Studio compatível com o Android 17.
-2. No SDK Manager, instale Android SDK Platform 37 e Android SDK Build-Tools 36.0.0 (versão padrão informada pelo AGP 9.5.0).
-3. Abra esta pasta no Android Studio e aguarde a sincronização do Gradle.
-4. Execute a tarefa `:app:assembleRelease`.
-5. O APK será gerado em `app/build/outputs/apk/release/app-release.apk`. Com V4 habilitada, o build também gera o arquivo `.idsig` correspondente.
+## Compilar
 
-Também é possível executar `./build-release.sh` (Linux/macOS, com Gradle e Android SDK configurados) ou `build-release.bat` (Windows). O script tenta validar a assinatura se `apksigner` estiver no `PATH`.
-
-## Verificar as quatro assinaturas
-
-Com Android SDK Build-Tools instalado:
+Abra a pasta `android/` no Android Studio ou use Gradle 9.6.0:
 
 ```bash
-apksigner verify --verbose app/build/outputs/apk/release/app-release.apk
+gradle --no-daemon -p . :app:assembleDebug
 ```
 
-O `apksigner` deve indicar V1, V2 e V3 habilitadas; a V4 é registrada no arquivo `.idsig` produzido ao lado do APK. O esquema V4 depende de V2 ou V3 e não é um quarto bloco embutido no APK.
+O APK Debug ficará em `app/build/outputs/apk/debug/app-debug.apk`.
 
-## Observações
+Para Release, configure a chave privada local ou execute **Actions → Build Shopping List APK → Run workflow** após cadastrar os quatro Secrets. O pipeline publica o APK, `.idsig`, SHA-256 e atualiza o manifesto raiz.
 
-- Exportar PNG pede que a pessoa escolha uma pasta; em seguida o aplicativo cria um arquivo PNG para cada página.
-- Exportar PDF pede o nome/local do arquivo com o seletor nativo de documentos do Android.
-- Os emojis exibidos dependem das fontes de emoji disponíveis no sistema. Em Androids antigos alguns emojis recentes podem aparecer como símbolo genérico, mas o texto da lista permanece intacto.
-- A geração do APK precisa do Android SDK/Gradle. O ambiente que originou este pacote não tinha Android SDK nem acesso de rede aos servidores de distribuição do Gradle, portanto o APK binário não foi compilado aqui. O projeto-fonte e a configuração de assinatura estão incluídos.
+## Atualizações integradas
 
-## Verificação de atualizações integrada
+A tela inicial inclui **Verificar atualizações**. A consulta é manual; criar, editar e exportar listas não exige internet.
 
-A tela inicial inclui **Verificar atualizações**. A consulta só acontece quando a pessoa toca nesse botão; a criação, edição, gravação das listas, PDF e PNG continuam locais e não precisam de internet.
-
-O atualizador lê `update.json` em:
+O manifesto usado pelo aplicativo é:
 
 `https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
 
-Esse endereço está reservado para a publicação futura. O repositório público `768ull/Shopping-List` ainda precisa ser criado e receber o manifesto e os APKs de release para que a verificação encontre versões novas. Até isso ser publicado, a tela informará que a fonte ainda não está disponível.
+A verificação exige versão maior, link HTTPS, SHA-256 válido, pacote `br.com.shoppinglist` e o mesmo certificado de assinatura da instalação atual. Depois disso, o aplicativo abre o instalador oficial do Android para a confirmação da pessoa.
 
-Formato do arquivo `update.json`:
-
-```json
-{
-  "versionCode": 2,
-  "versionName": "1.1",
-  "apkUrl": "https://github.com/768ull/Shopping-List/releases/download/v1.1/ShoppingList.apk",
-  "sha256": "COLOQUE_AQUI_O_SHA256_DE_64_CARACTERES",
-  "changelog": "Melhorias e correções."
-}
-```
-
-Para cada versão publicada:
-
-1. Aumente `versionCode` (por exemplo, de 1 para 2) e atualize `versionName`.
-2. Gere o APK Release com a mesma chave `signing/shopping-list-release.jks` e o mesmo `applicationId` `br.com.shoppinglist`.
-3. Publique o APK como asset de um GitHub Release no endereço usado em `apkUrl`.
-4. Calcule o SHA-256 do APK publicado e atualize `sha256`.
-5. Atualize o `update.json` na branch `main` do repositório público.
-
-O aplicativo verifica que o pacote baixado é `br.com.shoppinglist`, que seu `versionCode` é maior e que o certificado de assinatura corresponde ao aplicativo instalado. O Android abre sua própria tela de instalação e pode pedir autorização para instalar apps dessa fonte. A confirmação final continua com a pessoa; não é possível instalar silenciosamente em um aparelho Android comum.
-
-**Importante:** não troque nem perca a chave privada. Atualizações com outro certificado não serão instaladas sobre a versão anterior e poderão exigir desinstalação, o que apagaria os dados locais.
+O manifesto raiz começa sem APK publicado. Após a primeira publicação, o workflow atualiza `update.json` automaticamente.
