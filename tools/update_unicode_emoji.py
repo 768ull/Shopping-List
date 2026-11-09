@@ -76,7 +76,7 @@ def is_product_emoji(group: str, subgroup: str, name: str) -> bool:
     normalized = name.casefold()
     # Never show status/action symbols or the shopping-bag glyph that was
     # previously mistaken for the product itself.
-    excluded = ("shopping bags", "clinking", "pouring liquid", "with slash",
+    excluded = ("shopping bags", "shopping cart", "clinking", "pouring liquid", "with slash",
                 "muted speaker", "speaker low volume", "speaker medium volume",
                 "speaker high volume", "with arrow", "cooking", "dashing away")
     if any(term in normalized for term in excluded):
