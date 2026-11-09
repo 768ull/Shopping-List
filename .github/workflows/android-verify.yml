@@ -1,4 +1,4 @@
-name: Verify Shopping List Android
+name: Verify Shopping Lists Android
 
 on:
   push:
