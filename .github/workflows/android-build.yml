@@ -6,11 +6,11 @@ on:
       version_code:
         description: "Número de versão inteiro e maior que o publicado"
         required: true
-        default: "8"
+        default: "9"
       version_name:
         description: "Nome da versão (ex.: 1.0)"
         required: true
-        default: "1.0.7"
+        default: "1.0.8"
       changelog:
         description: "Notas da versão"
         required: true
