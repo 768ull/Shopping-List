@@ -523,7 +523,14 @@ public class MainActivity extends android.app.Activity {
                 String value = s.toString();
                 database.setItemText(item.id, value);
                 item.text = value;
-                if (autoEmoji && !item.emojiManual) {
+                // Uma escolha manual vale para o nome atual. Quando a pessoa
+                // altera o produto, volta a classificação automática para que
+                // o emoji corresponda ao novo texto digitado.
+                if (item.emojiManual) {
+                    item.emojiManual = false;
+                    database.setItemEmoji(item.id, item.emoji, false);
+                }
+                if (autoEmoji) {
                     String detected = EmojiCatalog.automatic(value);
                     if (!detected.equals(item.emoji)) {
                         item.emoji = detected;
