@@ -16,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: shopping-lists-debug-build
+  group: shopping-lists-debug-build-v2
   cancel-in-progress: false
 
 jobs:
