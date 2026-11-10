@@ -2,25 +2,139 @@ plugins {
     id 'com.android.application'
 }
 
-// A typed Gradle task exposes its output directory to the Android Components API.
+// Generate the complete Shopping Lists launcher artwork in Java2D, then
+// rasterize it at each Android density. The image source lives in this task,
+// so local builds and CI always produce identical resources without binaries
+// or external image-processing dependencies.
 abstract class GenerateShoppingLauncherIcons extends org.gradle.api.DefaultTask {
-    @org.gradle.api.tasks.InputFile
-    abstract org.gradle.api.file.RegularFileProperty getSourceFile()
-
     @org.gradle.api.tasks.OutputDirectory
     abstract org.gradle.api.file.DirectoryProperty getOutputDirectory()
 
     @org.gradle.api.tasks.TaskAction
     void generate() {
-        def sourceFileOnDisk = sourceFile.get().asFile
-        if (!sourceFileOnDisk.isFile()) {
-            throw new GradleException("Missing launcher icon source: ${sourceFileOnDisk}")
-        }
-        def sourceImage = javax.imageio.ImageIO.read(sourceFileOnDisk)
-        if (sourceImage == null) {
-            throw new GradleException("Launcher icon source is not a readable PNG")
+        final int canvasSize = 512
+        def master = new java.awt.image.BufferedImage(
+            canvasSize, canvasSize, java.awt.image.BufferedImage.TYPE_INT_ARGB
+        )
+        def g = master.createGraphics()
+        g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+        g.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY)
+        g.setRenderingHint(java.awt.RenderingHints.KEY_STROKE_CONTROL, java.awt.RenderingHints.VALUE_STROKE_PURE)
+
+        // Warm yellow rounded-square background.
+        g.setPaint(new java.awt.GradientPaint(0, 0, new java.awt.Color(255, 226, 74), 512, 512, new java.awt.Color(244, 160, 0)))
+        g.fillRoundRect(5, 5, 502, 502, 96, 96)
+        g.setColor(new java.awt.Color(190, 119, 0))
+        g.setStroke(new java.awt.BasicStroke(7f))
+        g.drawRoundRect(7, 7, 498, 498, 94, 94)
+        g.setColor(new java.awt.Color(255, 244, 169, 150))
+        g.setStroke(new java.awt.BasicStroke(3f))
+        g.drawRoundRect(18, 18, 476, 476, 82, 82)
+
+        // Shopping list paper and soft offset shadow.
+        g.setColor(new java.awt.Color(92, 60, 14, 105))
+        g.fillRoundRect(44, 67, 424, 405, 34, 34)
+        g.setPaint(new java.awt.GradientPaint(38, 54, new java.awt.Color(255, 255, 248), 464, 466, new java.awt.Color(255, 240, 198)))
+        g.fillRoundRect(34, 50, 444, 412, 36, 36)
+        g.setColor(new java.awt.Color(74, 51, 20))
+        g.setStroke(new java.awt.BasicStroke(7f))
+        g.drawRoundRect(37, 53, 438, 406, 34, 34)
+
+        // Spiral binding across the top edge of the list.
+        [104, 184, 264, 344, 424].each { x ->
+            g.setColor(new java.awt.Color(55, 48, 37))
+            g.setStroke(new java.awt.BasicStroke(15f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND))
+            g.drawArc(x - 11, 17, 22, 70, 0, -190)
+            g.setColor(new java.awt.Color(255, 255, 255))
+            g.setStroke(new java.awt.BasicStroke(5f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND))
+            g.drawArc(x - 8, 20, 16, 61, 0, -190)
         }
 
+        // Exact two-line app name requested.
+        g.setColor(new java.awt.Color(34, 30, 24))
+        g.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 62))
+        def titleMetrics = g.getFontMetrics()
+        g.drawString("Shopping", (canvasSize - titleMetrics.stringWidth("Shopping")) / 2, 190)
+        g.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 70))
+        def subtitleMetrics = g.getFontMetrics()
+        g.drawString("Lists", (canvasSize - subtitleMetrics.stringWidth("Lists")) / 2, 261)
+
+        // Three checked rows on the shopping list.
+        [312, 365, 418].each { y ->
+            g.setColor(java.awt.Color.WHITE)
+            g.fillRoundRect(78, y - 21, 43, 38, 8, 8)
+            g.setColor(new java.awt.Color(56, 105, 31))
+            g.setStroke(new java.awt.BasicStroke(4f))
+            g.drawRoundRect(79, y - 20, 41, 36, 8, 8)
+            def check = new java.awt.geom.Path2D.Double()
+            check.moveTo(86, y - 2)
+            check.lineTo(98, y + 10)
+            check.lineTo(116, y - 14)
+            g.setStroke(new java.awt.BasicStroke(8f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND))
+            g.draw(check)
+            g.setColor(new java.awt.Color(160, 151, 132))
+            g.setStroke(new java.awt.BasicStroke(8f, java.awt.BasicStroke.CAP_ROUND))
+            g.drawLine(143, y - 2, 247, y - 2)
+        }
+
+        // Small colorful groceries above the basket.
+        g.setColor(new java.awt.Color(210, 47, 35))
+        g.fillOval(350, 296, 50, 55)
+        g.setColor(new java.awt.Color(76, 132, 36))
+        def appleLeaf = new java.awt.geom.Path2D.Double()
+        appleLeaf.moveTo(376, 302)
+        appleLeaf.curveTo(377, 282, 401, 283, 406, 293)
+        appleLeaf.curveTo(397, 307, 385, 309, 376, 302)
+        g.fill(appleLeaf)
+        g.setColor(new java.awt.Color(82, 54, 24))
+        g.setStroke(new java.awt.BasicStroke(5f))
+        g.drawLine(377, 299, 378, 287)
+
+        g.setColor(new java.awt.Color(45, 135, 70))
+        g.fillOval(392, 310, 45, 38)
+        g.setColor(new java.awt.Color(37, 111, 66))
+        g.fillOval(405, 296, 30, 27)
+
+        def carton = new java.awt.geom.Path2D.Double()
+        carton.moveTo(418, 292)
+        carton.lineTo(451, 302)
+        carton.lineTo(451, 347)
+        carton.lineTo(418, 339)
+        carton.closePath()
+        g.setColor(new java.awt.Color(57, 141, 215))
+        g.fill(carton)
+        g.setColor(new java.awt.Color(232, 246, 255))
+        g.setStroke(new java.awt.BasicStroke(5f))
+        g.drawLine(425, 305, 444, 311)
+        g.drawLine(425, 315, 444, 321)
+
+        // Shopping basket, handle, grid and wheels.
+        g.setColor(new java.awt.Color(69, 48, 25))
+        g.setStroke(new java.awt.BasicStroke(10f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND))
+        g.drawLine(272, 323, 311, 323)
+        g.drawLine(311, 323, 335, 354)
+        def basket = new java.awt.geom.Path2D.Double()
+        basket.moveTo(315, 348)
+        basket.lineTo(462, 348)
+        basket.lineTo(444, 426)
+        basket.lineTo(339, 426)
+        basket.closePath()
+        g.setColor(new java.awt.Color(255, 175, 48))
+        g.fill(basket)
+        g.setColor(new java.awt.Color(69, 48, 25))
+        g.setStroke(new java.awt.BasicStroke(7f))
+        g.draw(basket)
+        g.setStroke(new java.awt.BasicStroke(5f))
+        [354, 384, 414].each { x -> g.drawLine(x, 354, x - 3, 420) }
+        [375, 399].each { y -> g.drawLine(324, y, 454, y) }
+        g.setColor(new java.awt.Color(65, 55, 42))
+        g.fillOval(337, 424, 27, 27)
+        g.fillOval(425, 424, 27, 27)
+        g.setColor(new java.awt.Color(218, 218, 218))
+        g.fillOval(344, 431, 13, 13)
+        g.fillOval(432, 431, 13, 13)
+
+        g.dispose()
         def outputRoot = outputDirectory.get().asFile
         if (!outputRoot.exists() && !outputRoot.mkdirs()) {
             throw new GradleException("Could not create launcher resource directory: ${outputRoot}")
@@ -35,15 +149,9 @@ abstract class GenerateShoppingLauncherIcons extends org.gradle.api.DefaultTask 
                 pixels, pixels, java.awt.image.BufferedImage.TYPE_INT_ARGB
             )
             def graphics = scaled.createGraphics()
-            graphics.setRenderingHint(
-                java.awt.RenderingHints.KEY_INTERPOLATION,
-                java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC
-            )
-            graphics.setRenderingHint(
-                java.awt.RenderingHints.KEY_RENDERING,
-                java.awt.RenderingHints.VALUE_RENDER_QUALITY
-            )
-            graphics.drawImage(sourceImage, 0, 0, pixels, pixels, null)
+            graphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+            graphics.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY)
+            graphics.drawImage(master, 0, 0, pixels, pixels, null)
             graphics.dispose()
             def outputFile = new File(densityDir, 'ic_launcher_custom.png')
             if (!javax.imageio.ImageIO.write(scaled, 'png', outputFile)) {
@@ -142,7 +250,6 @@ androidComponents {
             "generate${variant.name.capitalize()}LauncherIcons",
             GenerateShoppingLauncherIcons
         ) {
-            sourceFile.set(rootProject.layout.projectDirectory.file('APP_ICON_SOURCE.png'))
             outputDirectory.set(
                 layout.buildDirectory.dir("generated/res/shoppingLauncher/${variant.name}")
             )
