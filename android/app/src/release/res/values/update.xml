@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_manifest_url" translatable="false">https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json</string>
+</resources>
