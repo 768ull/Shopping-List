@@ -53,14 +53,6 @@ abstract class GenerateShoppingLauncherIcons extends org.gradle.api.DefaultTask 
     }
 }
 
-def generateShoppingLauncherIcons = tasks.register(
-    'generateShoppingLauncherIcons',
-    GenerateShoppingLauncherIcons
-) {
-    sourceFile.set(rootProject.layout.projectDirectory.file('APP_ICON_SOURCE.png'))
-    outputDirectory.set(layout.buildDirectory.dir('generated/res/shoppingLauncher'))
-}
-
 // Local Release signing is optional for CI verification. Distribution builds
 // receive this file from GitHub Actions Secrets and are signed with the private key.
 def releaseSigningPropertiesFile = rootProject.file('signing/signing.properties')
@@ -146,8 +138,17 @@ android {
 // resource merge automatically depends on the task for every build variant.
 androidComponents {
     onVariants(selector().all()) { variant ->
+        def variantLauncherTask = tasks.register(
+            "generate${variant.name.capitalize()}LauncherIcons",
+            GenerateShoppingLauncherIcons
+        ) {
+            sourceFile.set(rootProject.layout.projectDirectory.file('APP_ICON_SOURCE.png'))
+            outputDirectory.set(
+                layout.buildDirectory.dir("generated/res/shoppingLauncher/${variant.name}")
+            )
+        }
         variant.sources.res?.addGeneratedSourceDirectory(
-            generateShoppingLauncherIcons,
+            variantLauncherTask,
             { task -> task.outputDirectory }
         )
     }
