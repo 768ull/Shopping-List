@@ -101,14 +101,8 @@ android {
         debug {
             applicationIdSuffix '.debug'
             versionNameSuffix '-debug'
-            // O APK Debug usa um manifesto separado para nunca oferecer um APK
-            // br.com.shoppinglist.debug ao aplicativo Release.
-            resValue 'string', 'update_manifest_url',
-                    'https://raw.githubusercontent.com/768ull/Shopping-List/main/update-debug.json'
         }
         release {
-            resValue 'string', 'update_manifest_url',
-                    'https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json'
             // AGP 9.3+ enables R8 code optimization and resource shrinking together.
             optimization {
                 enable = true
