@@ -99,6 +99,7 @@ public final class EmojiCatalog {
         {"fone de ouvido|headphone|fone", "🎧"}, {"caixa de som|alto falante|speaker|radio|som bluetooth", "📻"},
         {"camera fotografica|camera", "📷"},
         {"carregador|cabo usb|tomada|adaptador|extensao", "🔌"},
+        {"lanterna|lanterna led|lanterna recarregavel|lanterna de mao|flashlight|tocha eletrica", "🔦"},
         {"pilha|bateria", "🔋"}, {"lampada led|lampada", "💡"},
         {"relogio", "⌚"}, {"oculos de sol", "🕶️"}, {"oculos", "👓"},
         {"camiseta|camisa", "👕"}, {"calca", "👖"}, {"vestido", "👗"},
@@ -126,7 +127,7 @@ public final class EmojiCatalog {
         "🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🍫","🍬","🍭","🍯","🥛","🧈","🧂","🥫","🫙",
         "🧃","🥤","🧋","🍵","☕","🍶","🍺","🍷","🥃","💐","🌹","🌺","🌻","🌷","🪴","🌱","🌵",
         "🧻","🧼","🧽","🧹","🪣","🧴","🪥","🧺","🧯","🪜",
-        "📱","📞","📟","📠","📻","⌚","💻","🖥️","🖨️","⌨️","🖱️","🖲️","💽","🔌","🔋","📷","📸","📹","🎥","📺","🎧","🎙️","🎤",
+        "📱","📞","📟","📠","📻","⌚","💻","🖥️","🖨️","⌨️","🖱️","🖲️","💽","🔌","🔋","📷","📸","📹","🎥","📺","🎧","🎙️","🎤","🔦",
         "👓","🕶️","👕","👖","👗","🥻","🩱","🩲","🩳","👟","🥾","👞","🥿","🧦","🧤","🧣","🧥","🧢","🎒","🧳","💍","💄","👜","👛","👝",
         "✏️","🖊️","🖋️","✒️","📓","📚","📒","📔","📖","📕","📗","📘","📙","📎","🖇️","✂️","📏","📐","📌",
         "🔨","🪓","⛏️","🛠️","🪛","🔧","🔩","🗜️","🪚","🧰" ,"🔑","🔒",
@@ -269,6 +270,7 @@ public final class EmojiCatalog {
         if ("🧼".equals(glyph)) return "sabao sabonete sabão";
         if ("🧽".equals(glyph)) return "esponja limpeza";
         if ("🔋".equals(glyph)) return "bateria pilha pilhas";
+        if ("🔦".equals(glyph)) return "lanterna lanterna led lanterna recarregavel flashlight tocha";
         if ("🧹".equals(glyph)) return "vassoura limpeza";
         if ("🧻".equals(glyph)) return "papel higienico papel toalha guardanapo";
         if ("🪥".equals(glyph)) return "escova de dente pasta de dente higiene bucal";
