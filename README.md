@@ -26,7 +26,8 @@ Shopping-List/
 ├── PROJECT_STRUCTURE.md
 ├── README.md
 ├── Shopping_List_Project_com_Atualizador.zip
-└── update.json
+├── update.json
+└── update-debug.json
 ```
 
 O arquivo `Shopping_List_Project_com_Atualizador.zip` é uma cópia auxiliar do projeto; a fonte principal mantida é a pasta `android/`. O ZIP do código-fonte e o ZIP do projeto não são APKs instaláveis.
@@ -41,7 +42,7 @@ O arquivo `Shopping_List_Project_com_Atualizador.zip` é uma cópia auxiliar do 
 - Verificação manual de atualizações via HTTPS e manifesto `update.json`.
 - Catálogo de **436 emojis de produtos** (Unicode filtrado), sem rostos, gestos, sinais ou animais usados como substitutos de mercadorias.
 - Bloqueio de pictogramas genéricos (🛍️, 🛒 e 🧠), reconhecimento local ampliado para produtos e marcas brasileiras de bebidas e alimentos, e indicador visual da IA local enquanto identifica ou cria um adesivo.
-- Compatibilidade com emojis inseridos pelo Gboard, Microsoft SwiftKey ou outro teclado Android, com validação contra o catálogo de produtos.
+- Compatibilidade com emojis inseridos por qualquer teclado Android, virtual, físico ou Bluetooth; emojis usados são salvos automaticamente na coleção pessoal da aba Emojis, sem depender do catálogo curado.
 - Atualização automática do catálogo filtrado via GitHub Actions e verificação em segundo plano no aplicativo.
 
 ## Compilar localmente
@@ -69,8 +70,11 @@ Configure os quatro Secrets no GitHub em **Settings → Secrets and variables �
 
 Antes de trocar a chave, considere se você já instalou uma compilação assinada com a chave anterior. Uma nova chave não atualiza normalmente instalações assinadas com outro certificado. O guia [CONFIGURAR_APK_E_ATUALIZACOES.md](CONFIGURAR_APK_E_ATUALIZACOES.md) explica essa decisão.
 
-O manifesto público é:
-`https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
+Os manifestos públicos são separados por variante para impedir que uma instalação receba um APK de pacote incompatível:
+- Release oficial: `https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json`
+- Debug de teste: `https://raw.githubusercontent.com/768ull/Shopping-List/main/update-debug.json`
+
+A versão Debug **1.0.12 (versionCode 13)** está publicada na Release de teste `debug-test`. O manifesto `update-debug.json` aponta para o APK dessa Release e contém o SHA-256 conferido do arquivo. O manifesto Release continua sem APK publicado até que a distribuição oficial assinada esteja pronta.
 
 ## Estado de validação
 
