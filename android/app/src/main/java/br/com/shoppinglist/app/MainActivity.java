@@ -689,14 +689,14 @@ public class MainActivity extends android.app.Activity {
         outer.setPadding(dp(14), dp(14), dp(14), dp(14));
         outer.setBackground(roundDrawable(PAPER, dp(20), Color.rgb(234, 210, 159), dp(1)));
 
-        TextView heading = label("Escolha um ícone de produto", 18, INK, true);
+        TextView heading = label("Escolha ou digite um emoji", 18, INK, true);
         heading.setPadding(0, 0, 0, dp(4));
         outer.addView(heading);
 
         int emojiCount = EmojiCatalogUpdater.getEmojiCount(this);
         TextView catalogInfo = label(
                 emojiCount + " emojis de produtos • Unicode " + EmojiCatalogUpdater.getUnicodeVersion(this)
-                        + " • catálogo filtrado e atualizado automaticamente",
+                        + " • seus emojis do teclado ficam salvos neste aparelho",
                 10, MUTED, false);
         catalogInfo.setPadding(0, 0, 0, dp(10));
         outer.addView(catalogInfo);
@@ -713,7 +713,7 @@ public class MainActivity extends android.app.Activity {
         outer.addView(search);
 
         TextView keyboardHelp = label(
-                "Também pode inserir um emoji pelo Gboard, SwiftKey ou outro teclado Android.",
+                "Use o teclado que preferir: virtual, Bluetooth ou físico. O emoji é salvo automaticamente.",
                 10, MUTED, false);
         keyboardHelp.setPadding(dp(2), dp(7), 0, dp(3));
         outer.addView(keyboardHelp);
@@ -723,9 +723,10 @@ public class MainActivity extends android.app.Activity {
         keyboardEmoji.setTextSize(14);
         keyboardEmoji.setTextColor(INK);
         keyboardEmoji.setHintTextColor(MUTED);
-        keyboardEmoji.setHint("Toque aqui e escolha um emoji no teclado");
+        keyboardEmoji.setHint("Toque aqui e use o emoji do seu teclado");
         keyboardEmoji.setInputType(android.text.InputType.TYPE_CLASS_TEXT
                 | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        keyboardEmoji.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
         keyboardEmoji.setPadding(dp(12), dp(8), dp(12), dp(8));
         keyboardEmoji.setBackground(roundDrawable(Color.rgb(255, 250, 235), dp(12),
                 Color.rgb(238, 218, 178), dp(1)));
@@ -739,7 +740,7 @@ public class MainActivity extends android.app.Activity {
         chooseKeyboard.setPadding(dp(8), dp(10), dp(8), dp(10));
         chooseKeyboard.setBackground(roundDrawable(BG_YELLOW_LIGHT, dp(10),
                 Color.rgb(240, 213, 145), dp(1)));
-        TextView useKeyboardEmoji = action("VALIDAR EMOJI", Color.WHITE, ORANGE, 11, true);
+        TextView useKeyboardEmoji = action("CONCLUIR", Color.WHITE, ORANGE, 11, true);
         useKeyboardEmoji.setGravity(Gravity.CENTER);
         useKeyboardEmoji.setPadding(dp(8), dp(10), dp(8), dp(10));
         useKeyboardEmoji.setBackground(roundDrawable(ORANGE, dp(10), 0, 0));
@@ -756,18 +757,11 @@ public class MainActivity extends android.app.Activity {
             InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             if (manager != null) manager.showInputMethodPicker();
         });
+        // A entrada é aplicada e salva em tempo real pelo TextWatcher abaixo.
+        // Este botão apenas fecha o seletor quando a pessoa terminar de digitar.
         useKeyboardEmoji.setOnClickListener(v -> {
-            String selected = EmojiCatalog.matchProductEmoji(this, keyboardEmoji.getText());
-            if (selected == null) {
-                Toast.makeText(this,
-                        "Esse emoji não está no catálogo de produtos. Escolha um alimento, objeto ou outro item comprável.",
-                        Toast.LENGTH_LONG).show();
-                return;
-            }
-            item.emoji = selected;
-            item.emojiManual = true;
-            database.setItemEmoji(item.id, selected, true);
-            renderSticker(sticker, selected);
+            InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (manager != null) manager.hideSoftInputFromWindow(keyboardEmoji.getWindowToken(), 0);
             dialog.dismiss();
         });
 
@@ -775,7 +769,7 @@ public class MainActivity extends android.app.Activity {
         tabs.setOrientation(LinearLayout.HORIZONTAL);
         tabs.setGravity(Gravity.CENTER);
         tabs.setPadding(0, dp(9), 0, dp(8));
-        TextView emojiTab = action("PRODUTOS", Color.WHITE, ORANGE, 12, true);
+        TextView emojiTab = action("EMOJIS", Color.WHITE, ORANGE, 12, true);
         emojiTab.setGravity(Gravity.CENTER);
         emojiTab.setPadding(dp(12), dp(10), dp(12), dp(10));
         emojiTab.setBackground(roundDrawable(ORANGE, dp(12), 0, 0));
@@ -791,7 +785,7 @@ public class MainActivity extends android.app.Activity {
         tabs.addView(stickerTab, stickerTabParams);
         outer.addView(tabs);
 
-        TextView resultInfo = label("Seleção rápida de produtos. Digite para pesquisar.", 10, MUTED, false);
+        TextView resultInfo = label("Emojis salvos do seu teclado e catálogo de produtos.", 10, MUTED, false);
         resultInfo.setPadding(dp(2), 0, 0, dp(5));
         outer.addView(resultInfo);
 
@@ -847,6 +841,40 @@ public class MainActivity extends android.app.Activity {
                 keyboardEmoji.setVisibility(View.VISIBLE);
                 keyboardActions.setVisibility(View.VISIBLE);
                 String query = search.getText() == null ? "" : search.getText().toString().trim();
+
+                // Emojis digitados no teclado aparecem aqui no topo, mesmo que não
+                // façam parte do catálogo curado de produtos.
+                List<String> personalEmojis = PersonalEmojiCatalog.getAll(this);
+                if (!personalEmojis.isEmpty()) {
+                    TextView personalHeading = label("SEUS EMOJIS DO TECLADO", 10, MUTED, true);
+                    personalHeading.setPadding(dp(3), dp(4), dp(3), dp(5));
+                    GridLayout.LayoutParams headingParams = new GridLayout.LayoutParams();
+                    headingParams.columnSpec = GridLayout.spec(0, 5);
+                    headingParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                    headingParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                    grid.addView(personalHeading, headingParams);
+
+                    for (String personalEmoji : personalEmojis) {
+                        TextView choice = label(personalEmoji, 27, INK, false);
+                        choice.setGravity(Gravity.CENTER);
+                        choice.setContentDescription("Emoji salvo do teclado: " + personalEmoji);
+                        choice.setBackground(roundDrawable(Color.rgb(255, 250, 235), dp(10),
+                                Color.rgb(245, 230, 202), dp(1)));
+                        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+                        params.width = dp(54);
+                        params.height = dp(54);
+                        params.setMargins(dp(2), dp(2), dp(2), dp(2));
+                        grid.addView(choice, params);
+                        choice.setOnClickListener(v -> {
+                            item.emoji = personalEmoji;
+                            item.emojiManual = true;
+                            database.setItemEmoji(item.id, personalEmoji, true);
+                            renderSticker(sticker, personalEmoji);
+                            dialog.dismiss();
+                        });
+                    }
+                }
+
                 if (!query.isEmpty() && !EmojiCatalog.isLoaded()) {
                     resultInfo.setText("Preparando a pesquisa de " + emojiCount + " emojis...");
                     TextView loading = label("Carregando catálogo em segundo plano...", 13, MUTED, false);
@@ -897,6 +925,27 @@ public class MainActivity extends android.app.Activity {
         };
         refreshGridRef[0] = refreshGrid;
 
+        keyboardEmoji.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                List<String> entered = PersonalEmojiCatalog.remember(MainActivity.this, s);
+                if (entered.isEmpty()) return;
+
+                // Every emoji typed or pasted is saved automatically. The last one
+                // in the input becomes the current product's emoji immediately.
+                String selected = entered.get(entered.size() - 1);
+                item.emoji = selected;
+                item.emojiManual = true;
+                database.setItemEmoji(item.id, selected, true);
+                renderSticker(sticker, selected);
+                resultInfo.setText("Emoji aplicado ao produto e salvo na aba Emojis deste aparelho.");
+                if (!showingStickers[0]) refreshGrid.run();
+            }
+
+            @Override public void afterTextChanged(android.text.Editable s) { }
+        });
+
         emojiTab.setOnClickListener(v -> {
             showingStickers[0] = false;
             emojiTab.setTextColor(Color.WHITE);
@@ -907,6 +956,8 @@ public class MainActivity extends android.app.Activity {
             refreshGrid.run();
         });
         stickerTab.setOnClickListener(v -> {
+            InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (manager != null) manager.hideSoftInputFromWindow(keyboardEmoji.getWindowToken(), 0);
             showingStickers[0] = true;
             stickerTab.setTextColor(Color.WHITE);
             stickerTab.setBackground(roundDrawable(ORANGE, dp(12), 0, 0));
@@ -947,7 +998,16 @@ public class MainActivity extends android.app.Activity {
             dialog.getWindow().setLayout(
                     Math.min(getResources().getDisplayMetrics().widthPixels - dp(28), dp(390)),
                     ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
+        // Focus the native Android input field so the installed keyboard opens
+        // automatically. Physical and Bluetooth keyboards can type into it too.
+        keyboardEmoji.requestFocus();
+        keyboardEmoji.postDelayed(() -> {
+            if (!dialog.isShowing() || showingStickers[0]) return;
+            InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (manager != null) manager.showSoftInput(keyboardEmoji, InputMethodManager.SHOW_IMPLICIT);
+        }, 180);
     }
 
     private void showExportDialog() {
