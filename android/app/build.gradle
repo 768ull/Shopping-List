@@ -4,7 +4,7 @@ plugins {
 
 // Generate density-specific launcher bitmaps from one canonical source image.
 // Java ImageIO is available from the JDK used by Android Gradle builds.
-def shoppingIconSourceFile = layout.projectDirectory.file('APP_ICON_SOURCE.png').asFile
+def shoppingIconSourceFile = rootProject.file('APP_ICON_SOURCE.png')
 def generatedShoppingIconRes = layout.buildDirectory.dir('generated/res/shoppingLauncher')
 def generateShoppingLauncherIcons = tasks.register('generateShoppingLauncherIcons') {
     inputs.file(shoppingIconSourceFile)
