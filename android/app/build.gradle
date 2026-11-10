@@ -2,6 +2,50 @@ plugins {
     id 'com.android.application'
 }
 
+// Generate density-specific launcher bitmaps from one canonical source image.
+// Java ImageIO is available from the JDK used by Android Gradle builds.
+def shoppingIconSourceFile = layout.projectDirectory.file('APP_ICON_SOURCE.png').asFile
+def generatedShoppingIconRes = layout.buildDirectory.dir('generated/res/shoppingLauncher')
+def generateShoppingLauncherIcons = tasks.register('generateShoppingLauncherIcons') {
+    inputs.file(shoppingIconSourceFile)
+    outputs.dir(generatedShoppingIconRes)
+    doLast {
+        if (!shoppingIconSourceFile.isFile()) {
+            throw new GradleException("Missing launcher icon source: ${shoppingIconSourceFile}")
+        }
+        def sourceImage = javax.imageio.ImageIO.read(shoppingIconSourceFile)
+        if (sourceImage == null) {
+            throw new GradleException("Launcher icon source is not a readable PNG")
+        }
+        def densitySizes = [mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192]
+        densitySizes.each { density, pixels ->
+            def densityDir = new File(generatedShoppingIconRes.get().asFile, "mipmap-${density}")
+            if (!densityDir.exists() && !densityDir.mkdirs()) {
+                throw new GradleException("Could not create launcher resource directory: ${densityDir}")
+            }
+            def scaled = new java.awt.image.BufferedImage(
+                pixels, pixels, java.awt.image.BufferedImage.TYPE_INT_ARGB
+            )
+            def graphics = scaled.createGraphics()
+            graphics.setRenderingHint(
+                java.awt.RenderingHints.KEY_INTERPOLATION,
+                java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC
+            )
+            graphics.setRenderingHint(
+                java.awt.RenderingHints.KEY_RENDERING,
+                java.awt.RenderingHints.VALUE_RENDER_QUALITY
+            )
+            graphics.drawImage(sourceImage, 0, 0, pixels, pixels, null)
+            graphics.dispose()
+            def outputFile = new File(densityDir, 'ic_launcher_custom.png')
+            if (!javax.imageio.ImageIO.write(scaled, 'png', outputFile)) {
+                throw new GradleException("Could not write launcher icon: ${outputFile}")
+            }
+        }
+    }
+}
+
+
 // Local Release signing is optional for CI verification. Distribution builds
 // receive this file from GitHub Actions Secrets and are signed with the private key.
 def releaseSigningPropertiesFile = rootProject.file('signing/signing.properties')
@@ -81,6 +125,12 @@ android {
         }
     }
 }
+
+
+// Include generated launcher resources before Android merges the APK.
+android.sourceSets.main.res.srcDir(generatedShoppingIconRes)
+tasks.named('preBuild').configure { dependsOn(generateShoppingLauncherIcons) }
+
 
 dependencies {
     implementation 'io.github.aatricks:llmedge:0.4.7.2'
