@@ -1,15 +1,17 @@
 package br.com.shoppinglist.app;
 
+import android.app.Activity;
+
 /**
- * Endpoint público do manifesto de atualização.
- * O repositório precisa publicar update.json na branch main.
+ * Endpoint do manifesto de atualização, definido por variante no Gradle.
+ * Debug e Release usam feeds separados para evitar instalar pacotes incompatíveis.
  */
 final class UpdateConfig {
     private UpdateConfig() { }
 
-    // Repositório reservado para as futuras versões do Shopping Lists.
-    static final String MANIFEST_URL =
-            "https://raw.githubusercontent.com/768ull/Shopping-List/main/update.json";
+    static String manifestUrl(Activity activity) {
+        return activity.getString(R.string.update_manifest_url);
+    }
 
     static final String APK_MIME_TYPE = "application/vnd.android.package-archive";
 }
