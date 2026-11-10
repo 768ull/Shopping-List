@@ -154,7 +154,7 @@ public class MainActivity extends android.app.Activity {
         hero.setGravity(Gravity.CENTER_VERTICAL);
         hero.setPadding(dp(2), dp(2), dp(2), dp(14));
         ImageView icon = new ImageView(this);
-        icon.setImageResource(br.com.shoppinglist.app.R.drawable.ic_launcher_preview);
+        icon.setImageResource(br.com.shoppinglist.app.R.mipmap.ic_launcher_custom);
         icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
         hero.addView(icon, new LinearLayout.LayoutParams(dp(76), dp(76)));
 
