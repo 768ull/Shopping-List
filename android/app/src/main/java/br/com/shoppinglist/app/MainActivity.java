@@ -119,12 +119,11 @@ public class MainActivity extends android.app.Activity {
 
     private void applyImmersiveMode() {
         View decor = getWindow().getDecorView();
-        int flags = View.SYSTEM_UI_FLAG_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+        // Keep the navigation bar immersive, but do not draw edge-to-edge or
+        // hide the status bar: fullscreen/layout flags prevent adjustResize
+        // from shrinking the editor when the Android keyboard is displayed.
+        int flags = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         decor.setSystemUiVisibility(flags);
     }
 
