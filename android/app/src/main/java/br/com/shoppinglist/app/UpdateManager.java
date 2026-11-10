@@ -63,7 +63,7 @@ final class UpdateManager {
             String message = null;
             HttpURLConnection connection = null;
             try {
-                URL url = new URL(UpdateConfig.MANIFEST_URL);
+                URL url = new URL(UpdateConfig.manifestUrl(activity));
                 if (!"https".equalsIgnoreCase(url.getProtocol())) {
                     throw new IllegalStateException("O endereço de atualização precisa usar HTTPS.");
                 }
