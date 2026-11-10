@@ -2,24 +2,32 @@ plugins {
     id 'com.android.application'
 }
 
-// Generate density-specific launcher bitmaps from one canonical source image.
-// Java ImageIO is available from the JDK used by Android Gradle builds.
-def shoppingIconSourceFile = rootProject.file('APP_ICON_SOURCE.png')
-def generatedShoppingIconRes = layout.buildDirectory.dir('generated/res/shoppingLauncher')
-def generateShoppingLauncherIcons = tasks.register('generateShoppingLauncherIcons') {
-    inputs.file(shoppingIconSourceFile)
-    outputs.dir(generatedShoppingIconRes)
-    doLast {
-        if (!shoppingIconSourceFile.isFile()) {
-            throw new GradleException("Missing launcher icon source: ${shoppingIconSourceFile}")
+// A typed Gradle task exposes its output directory to the Android Components API.
+abstract class GenerateShoppingLauncherIcons extends org.gradle.api.DefaultTask {
+    @org.gradle.api.tasks.InputFile
+    abstract org.gradle.api.file.RegularFileProperty getSourceFile()
+
+    @org.gradle.api.tasks.OutputDirectory
+    abstract org.gradle.api.file.DirectoryProperty getOutputDirectory()
+
+    @org.gradle.api.tasks.TaskAction
+    void generate() {
+        def sourceFileOnDisk = sourceFile.get().asFile
+        if (!sourceFileOnDisk.isFile()) {
+            throw new GradleException("Missing launcher icon source: ${sourceFileOnDisk}")
         }
-        def sourceImage = javax.imageio.ImageIO.read(shoppingIconSourceFile)
+        def sourceImage = javax.imageio.ImageIO.read(sourceFileOnDisk)
         if (sourceImage == null) {
             throw new GradleException("Launcher icon source is not a readable PNG")
         }
+
+        def outputRoot = outputDirectory.get().asFile
+        if (!outputRoot.exists() && !outputRoot.mkdirs()) {
+            throw new GradleException("Could not create launcher resource directory: ${outputRoot}")
+        }
         def densitySizes = [mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192]
         densitySizes.each { density, pixels ->
-            def densityDir = new File(generatedShoppingIconRes.get().asFile, "mipmap-${density}")
+            def densityDir = new File(outputRoot, "mipmap-${density}")
             if (!densityDir.exists() && !densityDir.mkdirs()) {
                 throw new GradleException("Could not create launcher resource directory: ${densityDir}")
             }
@@ -45,6 +53,13 @@ def generateShoppingLauncherIcons = tasks.register('generateShoppingLauncherIcon
     }
 }
 
+def generateShoppingLauncherIcons = tasks.register(
+    'generateShoppingLauncherIcons',
+    GenerateShoppingLauncherIcons
+) {
+    sourceFile.set(rootProject.layout.projectDirectory.file('APP_ICON_SOURCE.png'))
+    outputDirectory.set(layout.buildDirectory.dir('generated/res/shoppingLauncher'))
+}
 
 // Local Release signing is optional for CI verification. Distribution builds
 // receive this file from GitHub Actions Secrets and are signed with the private key.
@@ -127,9 +142,16 @@ android {
 }
 
 
-// Include generated launcher resources before Android merges the APK.
-android.sourceSets.main.res.srcDir(generatedShoppingIconRes)
-tasks.named('preBuild').configure { dependsOn(generateShoppingLauncherIcons) }
+// Register the generated bitmaps using the AGP Variant API so the
+// resource merge automatically depends on the task for every build variant.
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.res?.addGeneratedSourceDirectory(
+            generateShoppingLauncherIcons,
+            { task -> task.outputDirectory }
+        )
+    }
+}
 
 
 dependencies {
