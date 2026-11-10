@@ -1,0 +1,7 @@
+{
+  "versionCode": 13,
+  "versionName": "1.0.12-debug",
+  "apkUrl": "https://github.com/768ull/Shopping-List/releases/download/debug-test/Shopping-Lists-debug.apk",
+  "sha256": "f45996f3a6442bb6bbb1d50c4698d78e9475de2f1584778aeb34720c3a1bb808",
+  "changelog": "Shopping Lists 1.0.12 Debug: adiciona o teclado nativo do Android para inserir emojis em produtos, salva automaticamente os emojis usados na coleção pessoal da aba Emojis, preserva o catálogo e os adesivos, e mantém o ícone amarelo completo também dentro do aplicativo. Versão de teste Debug para Android arm64."
+}
