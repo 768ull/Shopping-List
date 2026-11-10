@@ -73,7 +73,7 @@ abstract class GenerateShoppingLauncherIcons extends org.gradle.api.DefaultTask 
             g.setStroke(new java.awt.BasicStroke(8f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND))
             g.draw(check)
             g.setColor(new java.awt.Color(160, 151, 132))
-            g.setStroke(new java.awt.BasicStroke(8f, java.awt.BasicStroke.CAP_ROUND))
+            g.setStroke(new java.awt.BasicStroke(8f))
             g.drawLine(143, y - 2, 247, y - 2)
         }
 
